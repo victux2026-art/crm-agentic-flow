@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CRM Flow Command Bridge</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="page-noise" aria-hidden="true"></div>
+  <main class="shell">
+    <section id="auth-panel" class="auth-shell">
+      <div class="auth-copy">
+        <p class="eyebrow">CRM Agentic Flow</p>
+        <h1>The Command Bridge</h1>
+        <p class="muted">
+          A semi-professional sales cockpit with an operations-grade event backbone:
+          pipeline, accounts, contacts, tasks, outbox, webhooks, replay, and audit.
+        </p>
+      </div>
+      <form id="login-form" class="login-card">
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" value="admin@crmflow.local" required>
+        </label>
+        <label>
+          <span>Password</span>
+          <input type="password" name="password" value="admin123" required>
+        </label>
+        <label>
+          <span>Tenant Slug</span>
+          <input type="text" name="tenant_slug" value="demo" required>
+        </label>
+        <button type="submit">Enter Bridge</button>
+        <p id="login-error" class="error hidden"></p>
+      </form>
+    </section>
+
+    <section id="app-panel" class="app-shell hidden">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <p class="eyebrow">CRM Agentic Flow</p>
+          <h2>Command Bridge</h2>
+        </div>
+
+        <nav class="nav-block">
+          <a href="#dashboard" class="nav-item active">Dashboard</a>
+          <a href="#pipeline" class="nav-item">Pipeline</a>
+          <a href="#organizations" class="nav-item">Organizations</a>
+          <a href="#people" class="nav-item">People</a>
+          <a href="#tasks" class="nav-item">Tasks</a>
+        </nav>
+
+        <div class="nav-separator">OPERATIONS</div>
+
+        <nav class="nav-block nav-block-ops">
+          <a href="#outbox-monitor" class="nav-item">Outbox</a>
+          <a href="#webhooks-monitor" class="nav-item">Webhooks</a>
+          <a href="#audit-monitor" class="nav-item">Audit Log</a>
+        </nav>
+
+        <div class="sidebar-foot">
+          <button id="logout-button" class="ghost small-button full-width">Logout</button>
+        </div>
+      </aside>
+
+      <div class="main-column">
+        <header class="topbar">
+          <label class="command-search">
+            <span>CMD+K</span>
+            <input id="command-search" type="text" placeholder="Search organizations, deals, contacts, tasks">
+          </label>
+          <div class="topbar-right">
+            <span id="session-badge" class="badge"></span>
+            <div class="worker-status">
+              <span id="worker-led" class="led"></span>
+              <span id="worker-status-text">Worker Live</span>
+            </div>
+            <button id="refresh-button" class="secondary small-button">Refresh</button>
+          </div>
+        </header>
+
+        <section id="dashboard" class="content-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Sales Core</p>
+              <h1>Dashboard</h1>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <article class="panel">
+              <div class="section-head">
+                <h3>Outbox Status</h3>
+                <span class="muted small">engine health</span>
+              </div>
+              <div id="outbox-status-cards" class="mini-grid"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Webhook Delivery</h3>
+                <span class="muted small">transport health</span>
+              </div>
+              <div id="delivery-status-cards" class="mini-grid"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Top Event Types</h3>
+                <span class="muted small">signal density</span>
+              </div>
+              <div id="event-type-list" class="stack"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Top Endpoints</h3>
+                <span class="muted small">delivery traffic</span>
+              </div>
+              <div id="endpoint-list" class="stack"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="pipeline" class="content-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Sales Core</p>
+              <h2>Deals Pipeline</h2>
+            </div>
+            <span class="muted small">High-signal Kanban</span>
+          </div>
+          <div id="pipeline-board" class="pipeline-board"></div>
+        </section>
+
+        <section id="organizations" class="content-section split-layout">
+          <article class="panel">
+            <div class="section-head">
+              <h3>Organizations</h3>
+              <span class="muted small">accounts in motion</span>
+            </div>
+            <form id="organization-form" class="inline-form">
+              <input type="text" name="name" placeholder="Ops Test Org" required>
+              <input type="text" name="domain" placeholder="ops.test">
+              <input type="text" name="industry" placeholder="QA">
+              <div class="form-actions">
+                <button type="submit" id="organization-submit">Create</button>
+                <button type="button" id="organization-cancel" class="ghost hidden">Cancel</button>
+              </div>
+            </form>
+            <p id="organization-result" class="muted"></p>
+            <div id="organization-list" class="entity-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="section-head">
+              <h3>Account Intelligence</h3>
+              <span class="muted small">timeline + context</span>
+            </div>
+            <div id="organization-detail" class="detail-card">
+              <span class="muted">Select an organization from the list.</span>
+            </div>
+          </article>
+        </section>
+
+        <section id="people" class="content-section split-layout">
+          <article class="panel">
+            <div class="section-head">
+              <h3>People</h3>
+              <span class="muted small">contacts and champions</span>
+            </div>
+            <form id="person-form" class="inline-form">
+              <select id="person-organization-id" name="organization_id">
+                <option value="">Select organization</option>
+              </select>
+              <input type="text" name="first_name" placeholder="Jane" required>
+              <input type="text" name="last_name" placeholder="Doe" required>
+              <input type="email" name="email" placeholder="jane@example.com">
+              <div class="form-actions">
+                <button type="submit" id="person-submit">Create Person</button>
+                <button type="button" id="person-cancel" class="ghost hidden">Cancel</button>
+              </div>
+            </form>
+            <p id="person-result" class="muted"></p>
+            <div id="person-list" class="entity-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="section-head">
+              <h3>Deals</h3>
+              <span class="muted small">revenue opportunities</span>
+            </div>
+            <form id="deal-form" class="inline-form">
+              <input type="text" name="name" placeholder="Expansion Deal" required>
+              <select id="deal-organization-id" name="organization_id" required>
+                <option value="">Select organization</option>
+              </select>
+              <input type="text" name="stage" placeholder="proposal">
+              <input type="number" name="value_amount" step="0.01" placeholder="5000">
+              <input type="text" name="value_currency" placeholder="USD">
+              <div class="form-actions">
+                <button type="submit" id="deal-submit">Create Deal</button>
+                <button type="button" id="deal-cancel" class="ghost hidden">Cancel</button>
+              </div>
+            </form>
+            <p id="deal-result" class="muted"></p>
+            <div id="deal-list" class="entity-list"></div>
+          </article>
+        </section>
+
+        <section id="tasks" class="content-section split-layout">
+          <article class="panel">
+            <div class="section-head">
+              <h3>Tasks</h3>
+              <span class="muted small">follow-up engine</span>
+            </div>
+            <form id="task-form" class="inline-form">
+              <input type="text" name="title" placeholder="Follow up after demo" required>
+              <select id="task-organization-id" name="organization_id">
+                <option value="">Select organization</option>
+              </select>
+              <select id="task-deal-id" name="deal_id">
+                <option value="">Optional deal</option>
+              </select>
+              <input type="text" name="priority" placeholder="high">
+              <input type="text" name="status" placeholder="open">
+              <div class="form-actions">
+                <button type="submit" id="task-submit">Create Task</button>
+                <button type="button" id="task-cancel" class="ghost hidden">Cancel</button>
+              </div>
+            </form>
+            <p id="task-result" class="muted"></p>
+            <div id="task-list" class="entity-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="section-head">
+              <h3>Recent Audit Log</h3>
+              <span class="muted small">human actions</span>
+            </div>
+            <div id="audit-list" class="event-list compact"></div>
+          </article>
+        </section>
+
+        <section id="outbox-monitor" class="content-section split-layout">
+          <article class="panel">
+            <div class="section-head">
+              <h3>Outbox Monitor</h3>
+              <button id="refresh-outbox" class="ghost small-button">Reload</button>
+            </div>
+            <div id="outbox-failed-list" class="event-list"></div>
+          </article>
+
+          <article id="webhooks-monitor" class="panel">
+            <div class="section-head">
+              <h3>Webhook Monitor</h3>
+              <button id="refresh-deliveries" class="ghost small-button">Reload</button>
+            </div>
+            <div id="delivery-failed-list" class="event-list"></div>
+          </article>
+        </section>
+
+        <section id="audit-monitor" class="content-section"></section>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>

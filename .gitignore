@@ -1,0 +1,34 @@
+# Build outputs
+bin/
+dist/
+
+# Go binaries and test artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.out
+cmd/api/api
+cmd/event-processor/event-processor
+cmd/event-processor/crm-agentic-flow-event-processor
+cmd/migration-agent/migration-agent
+
+# Local logs and temp files
+*.log
+tmp/
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Large local toolchains / archives
+*.tar
+*.tar.gz
+*.zip
+
+# Generated local CSV fixtures
+sample_crm_data.csv

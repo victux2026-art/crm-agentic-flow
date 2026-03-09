@@ -1,0 +1,11 @@
+node_modules/
+.git/
+bin/
+tmp/
+*.log
+dist/
+*.out
+*.test
+*.tar
+*.tar.gz
+sample_crm_data.csv

@@ -110,6 +110,9 @@ func TestUIRoutesServeStaticAssets(t *testing.T) {
 	if got := cssRec.Header().Get("Content-Type"); !strings.Contains(got, "text/css") {
 		t.Fatalf("GET /styles.css content-type = %q, want text/css", got)
 	}
+	if got := cssRec.Header().Get("Cache-Control"); !strings.Contains(got, "no-store") {
+		t.Fatalf("GET /styles.css cache-control = %q, want no-store", got)
+	}
 	if !strings.Contains(cssRec.Body.String(), ":root") {
 		t.Fatal("GET /styles.css did not return stylesheet content")
 	}

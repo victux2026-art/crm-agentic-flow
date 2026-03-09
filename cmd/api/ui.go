@@ -46,6 +46,9 @@ func serveEmbeddedFile(w http.ResponseWriter, filesystem fs.FS, name, contentTyp
 	}
 
 	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(content)
 }

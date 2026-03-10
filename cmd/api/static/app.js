@@ -26,9 +26,10 @@ const state = {
     subscriptionId: null,
   },
   filters: {
-    dealStage: "",
-    taskPriority: "",
+    dealStage: localStorage.getItem("crmflow_filter_deal_stage") || "",
+    taskPriority: localStorage.getItem("crmflow_filter_task_priority") || "",
   },
+  savedViews: JSON.parse(localStorage.getItem("crmflow_saved_views") || "[]"),
 };
 
 const authPanel = document.getElementById("auth-panel");
@@ -75,6 +76,10 @@ const noteOrganizationSelect = document.getElementById("note-organization-id");
 const noteDealSelect = document.getElementById("note-deal-id");
 const dealStageFilter = document.getElementById("deal-stage-filter");
 const taskPriorityFilter = document.getElementById("task-priority-filter");
+const savedViewSelect = document.getElementById("saved-view-select");
+const saveViewButton = document.getElementById("save-view-button");
+const deleteViewButton = document.getElementById("delete-view-button");
+const savedViewResult = document.getElementById("saved-view-result");
 const tenantForm = document.getElementById("tenant-form");
 const tenantResult = document.getElementById("tenant-result");
 const adminUserForm = document.getElementById("admin-user-form");
@@ -136,6 +141,65 @@ function applyWorkspaceMode() {
   } else {
     workspaceSwitcher.classList.add("hidden");
   }
+}
+
+function persistFilters() {
+  localStorage.setItem("crmflow_filter_deal_stage", state.filters.dealStage);
+  localStorage.setItem("crmflow_filter_task_priority", state.filters.taskPriority);
+}
+
+function renderSavedViews() {
+  savedViewSelect.innerHTML = '<option value="">Saved views</option>';
+  state.savedViews.forEach((view) => {
+    const option = document.createElement("option");
+    option.value = view.id;
+    option.textContent = view.name;
+    savedViewSelect.appendChild(option);
+  });
+}
+
+function applyFiltersToControls() {
+  dealStageFilter.value = state.filters.dealStage || "";
+  taskPriorityFilter.value = state.filters.taskPriority || "";
+}
+
+function saveCurrentView() {
+  const name = window.prompt("View name");
+  if (!name) return;
+  const view = {
+    id: `view_${Date.now()}`,
+    name,
+    filters: { ...state.filters },
+  };
+  state.savedViews = [...state.savedViews, view];
+  localStorage.setItem("crmflow_saved_views", JSON.stringify(state.savedViews));
+  renderSavedViews();
+  savedViewSelect.value = view.id;
+  savedViewResult.textContent = `Saved view ${name}.`;
+}
+
+function applySavedView(id) {
+  const view = state.savedViews.find((item) => item.id === id);
+  if (!view) return;
+  state.filters = { ...state.filters, ...view.filters };
+  persistFilters();
+  applyFiltersToControls();
+  renderPipeline(state.deals);
+  renderTasks();
+  savedViewResult.textContent = `Loaded view ${view.name}.`;
+}
+
+function deleteCurrentView() {
+  const id = savedViewSelect.value;
+  if (!id) {
+    savedViewResult.textContent = "Select a saved view first.";
+    return;
+  }
+  const view = state.savedViews.find((item) => item.id === id);
+  state.savedViews = state.savedViews.filter((item) => item.id !== id);
+  localStorage.setItem("crmflow_saved_views", JSON.stringify(state.savedViews));
+  renderSavedViews();
+  savedViewResult.textContent = view ? `Deleted view ${view.name}.` : "Deleted view.";
 }
 
 async function api(path, options = {}) {
@@ -1325,6 +1389,8 @@ function showApp() {
   sessionBadge.textContent = `${state.session.email} @ ${state.session.tenant_slug}`;
   roleBadge.textContent = state.session.role || "member";
   applyWorkspaceMode();
+  applyFiltersToControls();
+  renderSavedViews();
 }
 
 function showLogin() {
@@ -1600,12 +1666,17 @@ endpointCancel.addEventListener("click", () => cancelEdit("endpoint", endpointFo
 subscriptionCancel.addEventListener("click", () => cancelEdit("subscription", subscriptionForm, subscriptionResult, subscriptionEndpointSelect));
 dealStageFilter.addEventListener("change", () => {
   state.filters.dealStage = dealStageFilter.value;
+  persistFilters();
   renderPipeline(state.deals);
 });
 taskPriorityFilter.addEventListener("change", () => {
   state.filters.taskPriority = taskPriorityFilter.value;
+  persistFilters();
   renderTasks();
 });
+savedViewSelect.addEventListener("change", () => applySavedView(savedViewSelect.value));
+saveViewButton.addEventListener("click", saveCurrentView);
+deleteViewButton.addEventListener("click", deleteCurrentView);
 
 viewAdmin.addEventListener("click", () => setWorkspaceMode("admin"));
 viewTeam.addEventListener("click", () => setWorkspaceMode("team"));

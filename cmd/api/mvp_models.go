@@ -179,3 +179,25 @@ type AuditEntry struct {
 	UserAgent  *string                `json:"user_agent"`
 	CreatedAt  time.Time              `json:"created_at"`
 }
+
+type TenantAdminProfile struct {
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Slug      string    `json:"slug"`
+	Plan      string    `json:"plan"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type AdminUser struct {
+	ID               int64      `json:"id"`
+	Email            string     `json:"email"`
+	FullName         string     `json:"full_name"`
+	UserStatus       string     `json:"user_status"`
+	Role             string     `json:"role"`
+	MembershipStatus string     `json:"membership_status"`
+	LastLoginAt      *time.Time `json:"last_login_at"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+}

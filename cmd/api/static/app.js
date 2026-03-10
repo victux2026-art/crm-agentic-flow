@@ -7,6 +7,8 @@ const state = {
   people: [],
   tasks: [],
   notes: [],
+  adminTenant: null,
+  adminUsers: [],
   webhookEndpoints: [],
   webhookSubscriptions: [],
   outboxFailed: [],
@@ -19,6 +21,7 @@ const state = {
     personId: null,
     taskId: null,
     noteId: null,
+    adminUserId: null,
     endpointId: null,
     subscriptionId: null,
   },
@@ -72,6 +75,12 @@ const noteOrganizationSelect = document.getElementById("note-organization-id");
 const noteDealSelect = document.getElementById("note-deal-id");
 const dealStageFilter = document.getElementById("deal-stage-filter");
 const taskPriorityFilter = document.getElementById("task-priority-filter");
+const tenantForm = document.getElementById("tenant-form");
+const tenantResult = document.getElementById("tenant-result");
+const adminUserForm = document.getElementById("admin-user-form");
+const adminUserResult = document.getElementById("admin-user-result");
+const adminUserSubmit = document.getElementById("admin-user-submit");
+const adminUserCancel = document.getElementById("admin-user-cancel");
 
 const endpointForm = document.getElementById("endpoint-form");
 const endpointResult = document.getElementById("endpoint-result");
@@ -192,6 +201,21 @@ function renderWorkspaceFocus() {
       <strong>${item.value}</strong>
     </div>
   `).join("");
+}
+
+function renderAdminUsers() {
+  renderEntityCards("admin-users-list", state.adminUsers, (item) => `
+    <strong>${item.full_name}</strong>
+    <div class="muted small">${item.email}</div>
+    <div class="entity-meta">
+      <span class="pill">${item.role}</span>
+      <span class="pill">${item.user_status}</span>
+      <span class="pill">${item.membership_status}</span>
+    </div>
+    <div class="entity-card-actions">
+      <button type="button" class="ghost small-button" data-edit-type="adminUser" data-edit-id="${item.id}">Edit</button>
+    </div>
+  `);
 }
 
 function renderSalesSnapshot() {
@@ -809,6 +833,14 @@ function renderAdminCenter() {
     <div class="list-row"><span>Current mode</span><strong>${currentWorkspaceMode()}</strong></div>
   `;
 
+  if (state.adminTenant) {
+    tenantForm.elements.namedItem("name").value = state.adminTenant.name || "";
+    tenantForm.elements.namedItem("slug").value = state.adminTenant.slug || "";
+    tenantForm.elements.namedItem("plan").value = state.adminTenant.plan || "starter";
+    tenantForm.elements.namedItem("status").value = state.adminTenant.status || "active";
+  }
+
+  renderAdminUsers();
   renderWebhookEndpoints();
   renderWebhookSubscriptions();
 }
@@ -1002,6 +1034,7 @@ function setEditMode(kind, id) {
     note: noteSubmit,
     endpoint: endpointSubmit,
     subscription: subscriptionSubmit,
+    adminUser: adminUserSubmit,
   };
   const cancelMap = {
     organization: organizationCancel,
@@ -1011,6 +1044,7 @@ function setEditMode(kind, id) {
     note: noteCancel,
     endpoint: endpointCancel,
     subscription: subscriptionCancel,
+    adminUser: adminUserCancel,
   };
   submitMap[kind].textContent = `Save ${kind.charAt(0).toUpperCase() + kind.slice(1)}`;
   cancelMap[kind].classList.remove("hidden");
@@ -1026,6 +1060,7 @@ function clearEditMode(kind) {
     note: "Create Note",
     endpoint: "Create Endpoint",
     subscription: "Create Subscription",
+    adminUser: "Create User",
   };
   const submitMap = {
     organization: organizationSubmit,
@@ -1035,6 +1070,7 @@ function clearEditMode(kind) {
     note: noteSubmit,
     endpoint: endpointSubmit,
     subscription: subscriptionSubmit,
+    adminUser: adminUserSubmit,
   };
   const cancelMap = {
     organization: organizationCancel,
@@ -1044,6 +1080,7 @@ function clearEditMode(kind) {
     note: noteCancel,
     endpoint: endpointCancel,
     subscription: subscriptionCancel,
+    adminUser: adminUserCancel,
   };
   submitMap[kind].textContent = submitText[kind];
   cancelMap[kind].classList.add("hidden");
@@ -1115,6 +1152,21 @@ function startEditSubscription(id) {
   setEditMode("subscription", id);
 }
 
+function startEditAdminUser(id) {
+  const item = state.adminUsers.find((entry) => entry.id === id);
+  if (!item) return;
+  adminUserForm.elements.namedItem("full_name").value = item.full_name || "";
+  adminUserForm.elements.namedItem("email").value = item.email || "";
+  adminUserForm.elements.namedItem("password").value = "";
+  adminUserForm.elements.namedItem("role").value = item.role || "member";
+  adminUserForm.elements.namedItem("user_status").value = item.user_status || "active";
+  adminUserForm.elements.namedItem("membership_status").value = item.membership_status || "active";
+  adminUserForm.elements.namedItem("email").disabled = true;
+  adminUserForm.elements.namedItem("password").disabled = true;
+  adminUserResult.textContent = `Editing user ${item.full_name}.`;
+  setEditMode("adminUser", id);
+}
+
 function primeTaskFromDeal(id) {
   const deal = state.deals.find((entry) => entry.id === id);
   if (!deal) return;
@@ -1141,7 +1193,11 @@ async function deleteEntity(kind, id) {
 }
 
 async function loadDashboard() {
-  const [outboxStats, deliveryStats, failedOutbox, failedDeliveries, audit, organizations, deals, people, tasks, notes, webhookEndpoints, webhookSubscriptions] = await Promise.all([
+  const adminRequests = isAdminSession()
+    ? [api("/admin/tenant"), api("/admin/users")]
+    : [Promise.resolve(null), Promise.resolve([])];
+
+  const [outboxStats, deliveryStats, failedOutbox, failedDeliveries, audit, organizations, deals, people, tasks, notes, webhookEndpoints, webhookSubscriptions, adminTenant, adminUsers] = await Promise.all([
     api("/outbox-events/stats"),
     api("/webhook-deliveries/stats"),
     api("/outbox-events?status=failed&limit=10"),
@@ -1154,6 +1210,7 @@ async function loadDashboard() {
     api("/notes"),
     api("/webhook-endpoints"),
     api("/webhook-subscriptions"),
+    ...adminRequests,
   ]);
 
   state.organizations = organizations || [];
@@ -1161,6 +1218,8 @@ async function loadDashboard() {
   state.people = people || [];
   state.tasks = tasks || [];
   state.notes = notes || [];
+  state.adminTenant = adminTenant;
+  state.adminUsers = adminUsers || [];
   state.webhookEndpoints = webhookEndpoints || [];
   state.webhookSubscriptions = webhookSubscriptions || [];
   state.outboxFailed = failedOutbox || [];
@@ -1327,6 +1386,46 @@ async function submitNote(event) {
   }
 }
 
+async function submitTenant(event) {
+  event.preventDefault();
+  const body = Object.fromEntries(new FormData(tenantForm).entries());
+  try {
+    const result = await api("/admin/tenant", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+    tenantResult.textContent = `Updated tenant ${result.name}.`;
+    await loadDashboard();
+  } catch (error) {
+    tenantResult.textContent = error.message;
+  }
+}
+
+async function submitAdminUser(event) {
+  event.preventDefault();
+  const body = Object.fromEntries(new FormData(adminUserForm).entries());
+  const isEdit = state.editing.adminUserId != null;
+  if (isEdit) {
+    delete body.email;
+    delete body.password;
+  }
+
+  try {
+    const result = await api(isEdit ? `/admin/users/${state.editing.adminUserId}` : "/admin/users", {
+      method: isEdit ? "PUT" : "POST",
+      body: JSON.stringify(body),
+    });
+    adminUserResult.textContent = `${isEdit ? "Updated" : "Created"} user ${result.full_name}.`;
+    adminUserForm.reset();
+    adminUserForm.elements.namedItem("email").disabled = false;
+    adminUserForm.elements.namedItem("password").disabled = false;
+    clearEditMode("adminUser");
+    await loadDashboard();
+  } catch (error) {
+    adminUserResult.textContent = error.message;
+  }
+}
+
 async function submitEndpoint(event) {
   event.preventDefault();
   const body = Object.fromEntries(new FormData(endpointForm).entries());
@@ -1416,6 +1515,8 @@ dealForm.addEventListener("submit", submitDeal);
 personForm.addEventListener("submit", submitPerson);
 taskForm.addEventListener("submit", submitTask);
 noteForm.addEventListener("submit", submitNote);
+tenantForm.addEventListener("submit", submitTenant);
+adminUserForm.addEventListener("submit", submitAdminUser);
 endpointForm.addEventListener("submit", submitEndpoint);
 subscriptionForm.addEventListener("submit", submitSubscription);
 
@@ -1424,6 +1525,11 @@ dealCancel.addEventListener("click", () => cancelEdit("deal", dealForm, dealResu
 personCancel.addEventListener("click", () => cancelEdit("person", personForm, personResult, personOrganizationSelect));
 taskCancel.addEventListener("click", () => cancelEdit("task", taskForm, taskResult, taskOrganizationSelect));
 noteCancel.addEventListener("click", () => cancelEdit("note", noteForm, noteResult, noteOrganizationSelect));
+adminUserCancel.addEventListener("click", () => {
+  cancelEdit("adminUser", adminUserForm, adminUserResult);
+  adminUserForm.elements.namedItem("email").disabled = false;
+  adminUserForm.elements.namedItem("password").disabled = false;
+});
 endpointCancel.addEventListener("click", () => cancelEdit("endpoint", endpointForm, endpointResult));
 subscriptionCancel.addEventListener("click", () => cancelEdit("subscription", subscriptionForm, subscriptionResult, subscriptionEndpointSelect));
 dealStageFilter.addEventListener("change", () => {
@@ -1447,6 +1553,7 @@ document.addEventListener("click", async (event) => {
     if (type === "deal") startEditDeal(id);
     if (type === "person") startEditPerson(id);
     if (type === "task") startEditTask(id);
+    if (type === "adminUser") startEditAdminUser(id);
     if (type === "endpoint") startEditEndpoint(id);
     if (type === "subscription") startEditSubscription(id);
     if (type === "task-from-deal") primeTaskFromDeal(id);

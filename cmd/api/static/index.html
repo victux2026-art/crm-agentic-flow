@@ -268,6 +268,63 @@
           <div class="split-layout admin-management-grid">
             <article class="panel">
               <div class="section-head">
+                <h3>Tenant Settings</h3>
+                <span class="muted small">workspace identity</span>
+              </div>
+              <form id="tenant-form" class="inline-form">
+                <input type="text" name="name" placeholder="Tenant name" required>
+                <input type="text" name="slug" placeholder="tenant-slug" required>
+                <select name="plan">
+                  <option value="starter">starter</option>
+                  <option value="pro">pro</option>
+                  <option value="enterprise">enterprise</option>
+                </select>
+                <select name="status">
+                  <option value="active">active</option>
+                  <option value="inactive">inactive</option>
+                </select>
+                <div class="form-actions">
+                  <button type="submit" id="tenant-submit">Save Tenant</button>
+                </div>
+              </form>
+              <p id="tenant-result" class="muted"></p>
+            </article>
+
+            <article class="panel">
+              <div class="section-head">
+                <h3>Team Members</h3>
+                <span class="muted small">users and roles</span>
+              </div>
+              <form id="admin-user-form" class="inline-form">
+                <input type="text" name="full_name" placeholder="Full name" required>
+                <input type="email" name="email" placeholder="user@example.com">
+                <input type="password" name="password" placeholder="Temporary password">
+                <select name="role">
+                  <option value="member">member</option>
+                  <option value="admin">admin</option>
+                  <option value="owner">owner</option>
+                </select>
+                <select name="user_status">
+                  <option value="active">active</option>
+                  <option value="inactive">inactive</option>
+                </select>
+                <select name="membership_status">
+                  <option value="active">active</option>
+                  <option value="inactive">inactive</option>
+                </select>
+                <div class="form-actions">
+                  <button type="submit" id="admin-user-submit">Create User</button>
+                  <button type="button" id="admin-user-cancel" class="ghost hidden">Cancel</button>
+                </div>
+              </form>
+              <p id="admin-user-result" class="muted"></p>
+              <div id="admin-users-list" class="entity-list"></div>
+            </article>
+          </div>
+
+          <div class="split-layout admin-management-grid">
+            <article class="panel">
+              <div class="section-head">
                 <h3>Webhook Endpoints</h3>
                 <span class="muted small">delivery targets</span>
               </div>

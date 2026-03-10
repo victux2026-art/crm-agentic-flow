@@ -843,6 +843,75 @@ func TestGetWebhookDeliveryStatsReturnsOperationalSummary(t *testing.T) {
 	}
 }
 
+func TestAdminTenantAndUsersLifecycle(t *testing.T) {
+	ctx := context.Background()
+	pool, router, token := setupIntegrationApp(t, ctx)
+	defer pool.Close()
+
+	resp := performJSONRequest(t, router, http.MethodGet, "/admin/tenant", nil, token)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("get admin tenant returned status %d: %s", resp.Code, resp.Body.String())
+	}
+
+	updateTenantBody := map[string]interface{}{
+		"name":   "Updated Integration Tenant",
+		"slug":   "demo",
+		"plan":   "pro",
+		"status": "active",
+	}
+	resp = performJSONRequest(t, router, http.MethodPut, "/admin/tenant", updateTenantBody, token)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("update admin tenant returned status %d: %s", resp.Code, resp.Body.String())
+	}
+
+	createUserBody := map[string]interface{}{
+		"email":             "member@crmflow.local",
+		"password":          "member123",
+		"full_name":         "Team Member",
+		"role":              "member",
+		"user_status":       "active",
+		"membership_status": "active",
+	}
+	resp = performJSONRequest(t, router, http.MethodPost, "/admin/users", createUserBody, token)
+	if resp.Code != http.StatusCreated {
+		t.Fatalf("create admin user returned status %d: %s", resp.Code, resp.Body.String())
+	}
+
+	var createdUser map[string]interface{}
+	if err := json.Unmarshal(resp.Body.Bytes(), &createdUser); err != nil {
+		t.Fatalf("decode created admin user response: %v", err)
+	}
+	userID := int64(createdUser["id"].(float64))
+
+	resp = performJSONRequest(t, router, http.MethodGet, "/admin/users", nil, token)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("get admin users returned status %d: %s", resp.Code, resp.Body.String())
+	}
+
+	var users []map[string]interface{}
+	if err := json.Unmarshal(resp.Body.Bytes(), &users); err != nil {
+		t.Fatalf("decode admin users response: %v", err)
+	}
+	if len(users) != 2 {
+		t.Fatalf("expected 2 users in tenant, got %d", len(users))
+	}
+
+	updateUserBody := map[string]interface{}{
+		"full_name":         "Team Member Updated",
+		"role":              "admin",
+		"user_status":       "active",
+		"membership_status": "active",
+	}
+	resp = performJSONRequest(t, router, http.MethodPut, "/admin/users/"+itoa(userID), updateUserBody, token)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("update admin user returned status %d: %s", resp.Code, resp.Body.String())
+	}
+
+	assertAuditCount(t, ctx, pool, "updated", "tenant", 1)
+	assertAuditCount(t, ctx, pool, "created", "user", 1)
+	assertAuditCount(t, ctx, pool, "updated", "user", 1)
+}
+
 func resetIntegrationState(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	t.Helper()
 

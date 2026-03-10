@@ -216,6 +216,13 @@ function activeOrganizationsForWorkspace() {
   return state.organizations.filter((item) => ids.has(Number(item.id))).slice(0, 6);
 }
 
+function nextDealStage(stage) {
+  const flow = ["lead", "proposal", "negotiation", "won"];
+  const index = flow.indexOf(String(stage || "").toLowerCase());
+  if (index === -1 || index === flow.length - 1) return null;
+  return flow[index + 1];
+}
+
 function isTaskOpen(item) {
   return !["done", "completed", "closed"].includes(String(item.status || "").toLowerCase());
 }
@@ -301,6 +308,8 @@ function renderTeamHub() {
   const teamOverdueList = document.getElementById("team-overdue-list");
   const teamPipeline = document.getElementById("team-pipeline");
   const teamTargetAccount = document.getElementById("team-target-account");
+  const teamAccountsList = document.getElementById("team-accounts-list");
+  const teamActivityList = document.getElementById("team-activity-list");
 
   focusSummary.innerHTML = `
     <div class="list-row"><span>Open tasks</span><strong>${openTasks.length}</strong></div>
@@ -370,6 +379,45 @@ function renderTeamHub() {
       <strong>${item.count}</strong>
     </div>
   `).join("");
+
+  teamAccountsList.innerHTML = activeOrganizations.map((item) => {
+    const orgDeals = activeDeals.filter((deal) => deal.organization_id === item.id);
+    const orgTasks = openTasks.filter((task) => task.organization_id === item.id);
+    return `
+      <button type="button" class="compact-row account-focus-row" data-focus-organization="${item.id}">
+        <div>
+          <strong>${item.name}</strong>
+          <div class="muted small">${item.domain || "no domain"} • ${item.industry || "no industry"}</div>
+        </div>
+        <span class="pill">${orgDeals.length} deals / ${orgTasks.length} tasks</span>
+      </button>
+    `;
+  }).join("") || `<span class="muted small">No accounts in focus.</span>`;
+
+  const recentActivity = [
+    ...activeDeals.slice(0, 4).map((item) => ({
+      ts: item.updated_at || item.created_at,
+      title: item.name,
+      detail: `${item.stage} • ${item.status}`,
+      kind: "deal",
+    })),
+    ...openTasks.slice(0, 4).map((item) => ({
+      ts: item.updated_at || item.created_at,
+      title: item.title,
+      detail: `${item.priority} • ${item.status}`,
+      kind: "task",
+    })),
+  ].sort((a, b) => new Date(b.ts) - new Date(a.ts)).slice(0, 6);
+
+  teamActivityList.innerHTML = recentActivity.map((item) => `
+    <div class="compact-row">
+      <div>
+        <strong>${item.title}</strong>
+        <div class="muted small">${item.detail}</div>
+      </div>
+      <span class="pill">${item.kind}</span>
+    </div>
+  `).join("") || `<span class="muted small">No recent activity.</span>`;
 
   if (!targetAccount) {
     teamTargetAccount.innerHTML = `<span class="muted">No target account yet.</span>`;
@@ -445,6 +493,7 @@ function renderPipeline(deals) {
         ${columnDeals.map((deal) => {
           const healthClass = deal.status === "won" ? "health-good" : deal.stage === "negotiation" ? "health-warm" : "health-cold";
           const organization = state.organizations.find((item) => item.id === deal.organization_id);
+          const nextStage = nextDealStage(deal.stage);
           return `
             <article class="pipeline-card">
               <span class="pipeline-health ${healthClass}"></span>
@@ -458,7 +507,7 @@ function renderPipeline(deals) {
                 <span class="pill">${deal.status}</span>
               </div>
               <div class="quick-actions">
-                <button type="button" class="ghost compact-action" data-edit-type="deal" data-edit-id="${deal.id}">Move Stage</button>
+                ${nextStage ? `<button type="button" class="ghost compact-action" data-stage-deal-id="${deal.id}" data-stage-next="${nextStage}">Move to ${nextStage}</button>` : `<button type="button" class="ghost compact-action" data-edit-type="deal" data-edit-id="${deal.id}">Review</button>`}
                 <button type="button" class="ghost compact-action" data-edit-type="task-from-deal" data-edit-id="${deal.id}">Log Activity</button>
               </div>
             </article>`;
@@ -467,6 +516,33 @@ function renderPipeline(deals) {
     `;
     board.appendChild(node);
   });
+}
+
+async function moveDealToNextStage(id, nextStage) {
+  const deal = state.deals.find((entry) => entry.id === id);
+  if (!deal) return;
+
+  const body = {
+    organization_id: deal.organization_id,
+    primary_person_id: deal.primary_person_id,
+    name: deal.name,
+    stage: nextStage,
+    status: nextStage === "won" ? "won" : deal.status,
+    value_amount: Number(deal.value_amount || 0),
+    value_currency: deal.value_currency || "USD",
+    close_date_expected: deal.close_date_expected,
+    close_date_actual: deal.close_date_actual,
+    owner_user_id: deal.owner_user_id,
+    health_score: deal.health_score,
+    source: deal.source,
+    metadata: deal.metadata || {},
+  };
+
+  await api(`/deals/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+  await loadDashboard();
 }
 
 function renderEntityCards(targetId, items, formatter) {
@@ -1277,6 +1353,24 @@ document.addEventListener("click", async (event) => {
     state.selectedOrganizationId = Number(organizationCard.getAttribute("data-organization-id"));
     populateOrganizationSelect();
     renderOrganizations();
+    return;
+  }
+
+  const focusOrganization = event.target.closest("[data-focus-organization]");
+  if (focusOrganization) {
+    state.selectedOrganizationId = Number(focusOrganization.getAttribute("data-focus-organization"));
+    populateOrganizationSelect();
+    renderOrganizations();
+    document.getElementById("organizations").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  const stageButton = event.target.closest("[data-stage-deal-id]");
+  if (stageButton) {
+    await moveDealToNextStage(
+      Number(stageButton.getAttribute("data-stage-deal-id")),
+      stageButton.getAttribute("data-stage-next"),
+    );
     return;
   }
 

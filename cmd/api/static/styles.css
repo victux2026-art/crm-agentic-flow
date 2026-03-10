@@ -605,6 +605,14 @@ button.ghost {
   padding: 10px 12px;
 }
 
+.account-focus-row {
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
 .timeline {
   position: relative;
   display: grid;

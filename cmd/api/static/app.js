@@ -216,6 +216,74 @@ function activeOrganizationsForWorkspace() {
   return state.organizations.filter((item) => ids.has(Number(item.id))).slice(0, 6);
 }
 
+function isTaskOpen(item) {
+  return !["done", "completed", "closed"].includes(String(item.status || "").toLowerCase());
+}
+
+function dueDateParts(item) {
+  if (!item?.due_at) return null;
+  const due = new Date(item.due_at);
+  if (Number.isNaN(due.getTime())) return null;
+  const dueKey = due.toISOString().slice(0, 10);
+  const today = new Date();
+  const todayKey = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())).toISOString().slice(0, 10);
+  return { due, dueKey, todayKey };
+}
+
+function dueTodayTasks() {
+  return openTasksForWorkspace().filter((item) => {
+    const parts = dueDateParts(item);
+    return parts && parts.dueKey === parts.todayKey;
+  });
+}
+
+function overdueTasks() {
+  return openTasksForWorkspace().filter((item) => {
+    const parts = dueDateParts(item);
+    return parts && parts.dueKey < parts.todayKey;
+  });
+}
+
+function teamPipelineCounts() {
+  const counts = new Map([
+    ["lead", 0],
+    ["proposal", 0],
+    ["negotiation", 0],
+    ["won", 0],
+  ]);
+  activeDealsForWorkspace().forEach((item) => {
+    const stage = counts.has(item.stage) ? item.stage : "lead";
+    counts.set(stage, counts.get(stage) + 1);
+  });
+  return [...counts.entries()].map(([stage, count]) => ({ stage, count }));
+}
+
+function chooseTargetAccount() {
+  const organizationScores = new Map();
+
+  overdueTasks().forEach((task) => {
+    if (!task.organization_id) return;
+    const id = Number(task.organization_id);
+    organizationScores.set(id, (organizationScores.get(id) || 0) + 4);
+  });
+
+  dueTodayTasks().forEach((task) => {
+    if (!task.organization_id) return;
+    const id = Number(task.organization_id);
+    organizationScores.set(id, (organizationScores.get(id) || 0) + 2);
+  });
+
+  activeDealsForWorkspace().forEach((deal) => {
+    if (!deal.organization_id) return;
+    const id = Number(deal.organization_id);
+    const boost = ["negotiation", "proposal"].includes(String(deal.stage || "").toLowerCase()) ? 3 : 1;
+    organizationScores.set(id, (organizationScores.get(id) || 0) + boost);
+  });
+
+  const [bestID] = [...organizationScores.entries()].sort((a, b) => b[1] - a[1])[0] || [];
+  return state.organizations.find((item) => Number(item.id) === Number(bestID)) || activeOrganizationsForWorkspace()[0] || null;
+}
+
 function renderTeamHub() {
   const focusSummary = document.getElementById("team-focus-summary");
   const teamTaskList = document.getElementById("team-task-list");
@@ -226,9 +294,18 @@ function renderTeamHub() {
   const activeDeals = activeDealsForWorkspace();
   const activeOrganizations = activeOrganizationsForWorkspace();
   const proposalDeals = activeDeals.filter((item) => ["proposal", "negotiation"].includes(String(item.stage || "").toLowerCase()));
+  const todayTasks = dueTodayTasks();
+  const overdue = overdueTasks();
+  const targetAccount = chooseTargetAccount();
+  const teamTodayList = document.getElementById("team-today-list");
+  const teamOverdueList = document.getElementById("team-overdue-list");
+  const teamPipeline = document.getElementById("team-pipeline");
+  const teamTargetAccount = document.getElementById("team-target-account");
 
   focusSummary.innerHTML = `
     <div class="list-row"><span>Open tasks</span><strong>${openTasks.length}</strong></div>
+    <div class="list-row"><span>Due today</span><strong>${todayTasks.length}</strong></div>
+    <div class="list-row"><span>Overdue</span><strong>${overdue.length}</strong></div>
     <div class="list-row"><span>Active deals</span><strong>${activeDeals.length}</strong></div>
     <div class="list-row"><span>Late-stage deals</span><strong>${proposalDeals.length}</strong></div>
     <div class="list-row"><span>Active accounts</span><strong>${activeOrganizations.length}</strong></div>
@@ -269,6 +346,74 @@ function renderTeamHub() {
       <span class="pill">account</span>
     </div>
   `).join("") || `<span class="muted small">No active accounts yet.</span>`;
+
+  const renderTaskMini = (item) => {
+    const organization = state.organizations.find((entry) => entry.id === item.organization_id);
+    const due = item.due_at ? new Date(item.due_at).toLocaleDateString() : "no due date";
+    return `
+      <div class="compact-row">
+        <div>
+          <strong>${item.title}</strong>
+          <div class="muted small">${organization ? organization.name : "No organization"} • ${due}</div>
+        </div>
+        <span class="pill">${item.priority}</span>
+      </div>
+    `;
+  };
+
+  teamTodayList.innerHTML = todayTasks.slice(0, 4).map(renderTaskMini).join("") || `<span class="muted small">No tasks due today.</span>`;
+  teamOverdueList.innerHTML = overdue.slice(0, 4).map(renderTaskMini).join("") || `<span class="muted small">No overdue tasks.</span>`;
+
+  teamPipeline.innerHTML = teamPipelineCounts().map((item) => `
+    <div class="list-row">
+      <span>${item.stage}</span>
+      <strong>${item.count}</strong>
+    </div>
+  `).join("");
+
+  if (!targetAccount) {
+    teamTargetAccount.innerHTML = `<span class="muted">No target account yet.</span>`;
+    return;
+  }
+
+  const targetDeals = activeDeals.filter((item) => item.organization_id === targetAccount.id).slice(0, 3);
+  const targetTasks = openTasks.filter((item) => item.organization_id === targetAccount.id).slice(0, 3);
+
+  teamTargetAccount.innerHTML = `
+    <div class="detail-grid">
+      <div>
+        <p class="eyebrow">Target Account</p>
+        <h3>${targetAccount.name}</h3>
+        <p class="muted">${targetAccount.domain || "No domain"} • ${targetAccount.industry || "No industry"}</p>
+        <div class="entity-meta">
+          <span class="pill">deals ${targetDeals.length}</span>
+          <span class="pill">tasks ${targetTasks.length}</span>
+        </div>
+      </div>
+      <div class="detail-section">
+        <h4>Active Deals</h4>
+        <div class="compact-list">
+          ${targetDeals.length ? targetDeals.map((item) => `
+            <div class="compact-row">
+              <span>${item.name}</span>
+              <span class="muted small">${item.stage} • ${item.value_currency} ${Number(item.value_amount || 0).toLocaleString()}</span>
+            </div>
+          `).join("") : `<span class="muted small">No active deals.</span>`}
+        </div>
+      </div>
+      <div class="detail-section">
+        <h4>Open Tasks</h4>
+        <div class="compact-list">
+          ${targetTasks.length ? targetTasks.map((item) => `
+            <div class="compact-row">
+              <span>${item.title}</span>
+              <span class="muted small">${item.priority} • ${item.status}</span>
+            </div>
+          `).join("") : `<span class="muted small">No open tasks.</span>`}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function setWorkerStatus(isLive) {

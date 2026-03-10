@@ -576,6 +576,21 @@ button.ghost {
   align-items: center;
 }
 
+.team-focus-grid,
+.team-urgency-grid {
+  align-items: start;
+}
+
+.team-urgency-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.team-target-card {
+  min-height: 0;
+}
+
 .detail-section {
   padding-top: 14px;
   border-top: 1px solid var(--line);
@@ -681,6 +696,10 @@ body[data-workspace="team"] .team-summary-panel {
   .admin-grid,
   .pipeline-board,
   .split-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .team-urgency-grid {
     grid-template-columns: 1fr;
   }
 }

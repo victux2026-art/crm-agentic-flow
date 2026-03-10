@@ -141,6 +141,11 @@ function applyWorkspaceMode() {
   } else {
     workspaceSwitcher.classList.add("hidden");
   }
+
+  if (state.token) {
+    renderWorkspaceFocus();
+    renderBridgeRail();
+  }
 }
 
 function persistFilters() {
@@ -264,6 +269,74 @@ function renderWorkspaceFocus() {
       <span>${item.label}</span>
       <strong>${item.value}</strong>
     </div>
+  `).join("");
+}
+
+function renderBridgeRail() {
+  const target = document.getElementById("bridge-glance");
+  const mode = currentWorkspaceMode();
+  const openDeals = state.deals.filter((item) => !["won", "lost", "closed"].includes(String(item.status || "").toLowerCase()));
+  const pipelineValue = openDeals.reduce((sum, item) => sum + Number(item.value_amount || 0), 0);
+  const failedDeliveries = state.deliveryFailed.length;
+  const failedOutbox = state.outboxFailed.length;
+  const overdue = overdueTasks();
+  const targetAccount = chooseTargetAccount();
+
+  const cards = mode === "admin"
+    ? [
+      {
+        label: "Tenant",
+        value: state.adminTenant?.name || state.session?.tenant_slug || "n/a",
+        meta: `${state.adminTenant?.plan || "starter"} plan`,
+      },
+      {
+        label: "Open Pipeline",
+        value: `USD ${Math.round(pipelineValue).toLocaleString()}`,
+        meta: `${openDeals.length} live deals`,
+      },
+      {
+        label: "Delivery Pressure",
+        value: String(failedDeliveries),
+        meta: failedDeliveries ? "failed deliveries" : "transport healthy",
+        tone: failedDeliveries ? "warn" : "ok",
+      },
+      {
+        label: "Event Backlog",
+        value: String(failedOutbox),
+        meta: failedOutbox ? "failed outbox events" : "outbox stable",
+        tone: failedOutbox ? "warn" : "ok",
+      },
+    ]
+    : [
+      {
+        label: "My Open Work",
+        value: String(openTasksForWorkspace().length),
+        meta: "tasks in queue",
+      },
+      {
+        label: "Overdue",
+        value: String(overdue.length),
+        meta: overdue.length ? "needs recovery" : "under control",
+        tone: overdue.length ? "warn" : "ok",
+      },
+      {
+        label: "Active Deals",
+        value: String(activeDealsForWorkspace().length),
+        meta: "revenue in motion",
+      },
+      {
+        label: "Target Account",
+        value: targetAccount?.name || "None",
+        meta: "next best place to work",
+      },
+    ];
+
+  target.innerHTML = cards.map((item) => `
+    <article class="glance-card${item.tone ? ` tone-${item.tone}` : ""}">
+      <span class="glance-label">${item.label}</span>
+      <strong class="glance-value">${item.value}</strong>
+      <span class="glance-meta">${item.meta}</span>
+    </article>
   `).join("");
 }
 
@@ -1366,6 +1439,7 @@ async function loadDashboard() {
   renderSalesSnapshot();
   renderCommercialReporting();
   renderWorkspaceFocus();
+  renderBridgeRail();
   renderTeamHub();
   renderPipeline(state.deals);
   populateOrganizationSelect();

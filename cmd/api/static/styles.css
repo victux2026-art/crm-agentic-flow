@@ -176,6 +176,9 @@ select {
 }
 
 .topbar {
+  position: sticky;
+  top: 12px;
+  z-index: 20;
   display: flex;
   justify-content: space-between;
   gap: 18px;
@@ -186,6 +189,86 @@ select {
   background: var(--panel);
   backdrop-filter: blur(14px);
   box-shadow: var(--shadow);
+}
+
+.bridge-rail {
+  display: grid;
+  gap: 12px;
+}
+
+.glance-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.glance-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(99, 102, 241, 0.08), transparent 55%),
+    rgba(255, 255, 255, 0.92);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+}
+
+.glance-card.tone-ok {
+  background:
+    linear-gradient(135deg, rgba(22, 163, 74, 0.1), transparent 55%),
+    rgba(255, 255, 255, 0.94);
+}
+
+.glance-card.tone-warn {
+  background:
+    linear-gradient(135deg, rgba(245, 158, 11, 0.14), transparent 55%),
+    rgba(255, 255, 255, 0.94);
+}
+
+.glance-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.glance-value {
+  font-size: 1.22rem;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.glance-meta {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.jumpbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.jump-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.jump-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.28);
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .command-search {
@@ -269,6 +352,7 @@ select {
 .section-title-row h1,
 .section-title-row h2 {
   letter-spacing: -0.03em;
+  font-size: clamp(1.6rem, 2vw, 2.1rem);
 }
 
 .panel {
@@ -349,7 +433,9 @@ select {
 .pipeline-column {
   padding: 14px;
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(241, 245, 249, 0.88));
+  background:
+    linear-gradient(180deg, rgba(99, 102, 241, 0.05), transparent 16%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(241, 245, 249, 0.88));
   border: 1px solid var(--line);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
@@ -390,6 +476,13 @@ select {
   padding: 16px 16px 14px 20px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.pipeline-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.22);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
 }
 
 .pipeline-health {
@@ -498,6 +591,13 @@ select {
   gap: 12px;
 }
 
+.inline-form {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
 label {
   display: grid;
   gap: 6px;
@@ -511,6 +611,14 @@ textarea {
   border-radius: 14px;
   border: 1px solid var(--line);
   background: white;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
 }
 
 textarea {
@@ -664,6 +772,9 @@ button.ghost {
 .compact-row {
   justify-content: space-between;
   padding: 10px 12px;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .account-focus-row {
@@ -730,6 +841,25 @@ button.ghost {
   text-decoration: underline;
 }
 
+.list-row {
+  padding: 12px 14px;
+  background:
+    linear-gradient(90deg, rgba(99, 102, 241, 0.03), transparent 32%),
+    rgba(255, 255, 255, 0.9);
+}
+
+.event-card {
+  padding: 16px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.event-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+}
+
 pre {
   margin: 10px 0 0;
   padding: 10px;
@@ -776,6 +906,7 @@ body[data-workspace="team"] .team-summary-panel {
 
   .stats-grid,
   .admin-grid,
+  .glance-grid,
   .pipeline-board,
   .split-layout {
     grid-template-columns: 1fr;

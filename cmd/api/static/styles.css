@@ -2,10 +2,12 @@
   --nav: #0f172a;
   --nav-soft: #162139;
   --accent: #6366f1;
+  --accent-strong: #4f46e5;
   --accent-soft: rgba(99, 102, 241, 0.12);
   --surface: #f8fafc;
   --surface-strong: rgba(255, 255, 255, 0.94);
   --panel: rgba(255, 255, 255, 0.84);
+  --panel-strong: rgba(255, 255, 255, 0.96);
   --line: rgba(15, 23, 42, 0.08);
   --text: #0f172a;
   --muted: #64748b;
@@ -13,6 +15,7 @@
   --warn: #f59e0b;
   --bad: #dc2626;
   --shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  --shadow-strong: 0 28px 80px rgba(15, 23, 42, 0.12);
 }
 
 * {
@@ -28,8 +31,9 @@ body {
   min-height: 100vh;
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.08), transparent 24%),
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 24%),
+    radial-gradient(circle at 85% 10%, rgba(245, 158, 11, 0.08), transparent 18%),
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.1), transparent 24%),
     var(--surface);
   font-family: Inter, Geist, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -262,10 +266,47 @@ select {
   margin: 0;
 }
 
+.section-title-row h1,
+.section-title-row h2 {
+  letter-spacing: -0.03em;
+}
+
 .panel {
   padding: 20px;
-  background: var(--panel);
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.9));
   backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+}
+
+.panel::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.7), rgba(14, 165, 233, 0.25), transparent 80%);
+}
+
+#dashboard .panel::after {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.82), rgba(99, 102, 241, 0.16));
+}
+
+#reporting .panel::after {
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.82), rgba(99, 102, 241, 0.18));
+}
+
+#team-hub .panel::after {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.84), rgba(99, 102, 241, 0.18));
+}
+
+#admin-center .panel::after {
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.9), rgba(99, 102, 241, 0.24));
+}
+
+#activity-feed .panel::after {
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.82), rgba(99, 102, 241, 0.18));
 }
 
 .stats-grid {
@@ -308,8 +349,9 @@ select {
 .pipeline-column {
   padding: 14px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.66);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(241, 245, 249, 0.88));
   border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .pipeline-column header {
@@ -340,13 +382,14 @@ select {
 .compact-row {
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .pipeline-card {
   position: relative;
   padding: 16px 16px 14px 20px;
   overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 .pipeline-health {
@@ -532,13 +575,14 @@ button.ghost {
 }
 
 .entity-card:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   border-color: rgba(99, 102, 241, 0.32);
+  box-shadow: 0 14px 30px rgba(99, 102, 241, 0.08);
 }
 
 .entity-card.selected {
   border-color: rgba(99, 102, 241, 0.5);
-  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.16), 0 12px 28px rgba(99, 102, 241, 0.08);
 }
 
 .endpoint-url {
@@ -582,8 +626,9 @@ button.ghost {
   border-radius: 22px;
   background:
     linear-gradient(180deg, rgba(99, 102, 241, 0.04), transparent 24%),
-    rgba(255, 255, 255, 0.64);
+    rgba(255, 255, 255, 0.82);
   border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .detail-grid { display: grid; gap: 18px; }
@@ -678,6 +723,7 @@ button.ghost {
   color: var(--accent);
   text-decoration: none;
   font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .timeline-link:hover {
@@ -698,6 +744,12 @@ pre {
   margin: 12px 0 0;
   line-height: 1.5;
   white-space: pre-wrap;
+}
+
+#reporting .list-row strong,
+#dashboard .list-row strong,
+#team-hub .list-row strong {
+  font-variant-numeric: tabular-nums;
 }
 
 .error { color: var(--bad); }

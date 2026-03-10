@@ -1,10 +1,13 @@
 const state = {
   token: localStorage.getItem("crmflow_token") || "",
   session: JSON.parse(localStorage.getItem("crmflow_session") || "null"),
+  workspaceMode: localStorage.getItem("crmflow_workspace_mode") || "auto",
   organizations: [],
   deals: [],
   people: [],
   tasks: [],
+  webhookEndpoints: [],
+  webhookSubscriptions: [],
   outboxFailed: [],
   deliveryFailed: [],
   audit: [],
@@ -14,6 +17,8 @@ const state = {
     dealId: null,
     personId: null,
     taskId: null,
+    endpointId: null,
+    subscriptionId: null,
   },
 };
 
@@ -22,9 +27,13 @@ const appPanel = document.getElementById("app-panel");
 const loginForm = document.getElementById("login-form");
 const loginError = document.getElementById("login-error");
 const sessionBadge = document.getElementById("session-badge");
+const roleBadge = document.getElementById("role-badge");
 const workerLed = document.getElementById("worker-led");
 const workerStatusText = document.getElementById("worker-status-text");
 const commandSearch = document.getElementById("command-search");
+const workspaceSwitcher = document.getElementById("workspace-switcher");
+const viewAdmin = document.getElementById("view-admin");
+const viewTeam = document.getElementById("view-team");
 
 const organizationForm = document.getElementById("organization-form");
 const organizationResult = document.getElementById("organization-result");
@@ -50,6 +59,17 @@ const taskDealSelect = document.getElementById("task-deal-id");
 const taskSubmit = document.getElementById("task-submit");
 const taskCancel = document.getElementById("task-cancel");
 
+const endpointForm = document.getElementById("endpoint-form");
+const endpointResult = document.getElementById("endpoint-result");
+const endpointSubmit = document.getElementById("endpoint-submit");
+const endpointCancel = document.getElementById("endpoint-cancel");
+
+const subscriptionForm = document.getElementById("subscription-form");
+const subscriptionResult = document.getElementById("subscription-result");
+const subscriptionSubmit = document.getElementById("subscription-submit");
+const subscriptionCancel = document.getElementById("subscription-cancel");
+const subscriptionEndpointSelect = document.getElementById("subscription-endpoint-id");
+
 function setSession(token, session) {
   state.token = token;
   state.session = session;
@@ -62,6 +82,37 @@ function clearSession() {
   state.session = null;
   localStorage.removeItem("crmflow_token");
   localStorage.removeItem("crmflow_session");
+}
+
+function isAdminSession() {
+  return ["admin", "owner"].includes(String(state.session?.role || "").toLowerCase());
+}
+
+function currentWorkspaceMode() {
+  if (!isAdminSession()) {
+    return "team";
+  }
+  return state.workspaceMode === "team" ? "team" : "admin";
+}
+
+function setWorkspaceMode(mode) {
+  state.workspaceMode = mode;
+  localStorage.setItem("crmflow_workspace_mode", mode);
+  applyWorkspaceMode();
+}
+
+function applyWorkspaceMode() {
+  const mode = currentWorkspaceMode();
+  const root = document.body;
+  root.dataset.workspace = mode;
+
+  if (isAdminSession()) {
+    workspaceSwitcher.classList.remove("hidden");
+    viewAdmin.classList.toggle("active", mode === "admin");
+    viewTeam.classList.toggle("active", mode === "team");
+  } else {
+    workspaceSwitcher.classList.add("hidden");
+  }
 }
 
 async function api(path, options = {}) {
@@ -104,6 +155,120 @@ function renderRankedList(targetId, items, labelKey) {
     row.innerHTML = `<span>${item[labelKey]}</span><strong>${item.count}</strong>`;
     target.appendChild(row);
   });
+}
+
+function renderWorkspaceFocus() {
+  const target = document.getElementById("workspace-focus");
+  const mode = currentWorkspaceMode();
+  const entries = mode === "admin"
+    ? [
+      { label: "Workspace", value: "Administrator" },
+      { label: "Primary focus", value: "Tenant governance and revenue ops" },
+      { label: "Controls", value: "Webhooks, outbox, audit, sales workspace" },
+    ]
+    : [
+      { label: "Workspace", value: "Team Member" },
+      { label: "Primary focus", value: "Accounts, deals, people, tasks" },
+      { label: "Controls", value: "Sales workspace only" },
+    ];
+
+  target.innerHTML = entries.map((item) => `
+    <div class="list-row">
+      <span>${item.label}</span>
+      <strong>${item.value}</strong>
+    </div>
+  `).join("");
+}
+
+function userOwnsItem(item) {
+  const userID = Number(state.session?.user_id || 0);
+  if (!userID) return false;
+  return Number(item.owner_user_id || item.created_by_user_id || 0) === userID;
+}
+
+function openTasksForWorkspace() {
+  const open = state.tasks.filter((item) => !["done", "completed", "closed"].includes(String(item.status || "").toLowerCase()));
+  const mine = open.filter((item) => userOwnsItem(item));
+  const source = mine.length ? mine : open;
+  return source.sort((a, b) => {
+    const priorityWeight = { high: 0, medium: 1, low: 2 };
+    const aPriority = priorityWeight[String(a.priority || "").toLowerCase()] ?? 3;
+    const bPriority = priorityWeight[String(b.priority || "").toLowerCase()] ?? 3;
+    return aPriority - bPriority;
+  });
+}
+
+function activeDealsForWorkspace() {
+  const active = state.deals.filter((item) => !["won", "lost", "closed"].includes(String(item.status || "").toLowerCase()));
+  const mine = active.filter((item) => userOwnsItem(item));
+  const source = mine.length ? mine : active;
+  return source.sort((a, b) => Number(b.value_amount || 0) - Number(a.value_amount || 0));
+}
+
+function activeOrganizationsForWorkspace() {
+  const ids = new Set();
+  openTasksForWorkspace().slice(0, 6).forEach((item) => {
+    if (item.organization_id) ids.add(Number(item.organization_id));
+  });
+  activeDealsForWorkspace().slice(0, 6).forEach((item) => {
+    if (item.organization_id) ids.add(Number(item.organization_id));
+  });
+  return state.organizations.filter((item) => ids.has(Number(item.id))).slice(0, 6);
+}
+
+function renderTeamHub() {
+  const focusSummary = document.getElementById("team-focus-summary");
+  const teamTaskList = document.getElementById("team-task-list");
+  const teamDealList = document.getElementById("team-deal-list");
+  const teamOrganizationList = document.getElementById("team-organization-list");
+
+  const openTasks = openTasksForWorkspace();
+  const activeDeals = activeDealsForWorkspace();
+  const activeOrganizations = activeOrganizationsForWorkspace();
+  const proposalDeals = activeDeals.filter((item) => ["proposal", "negotiation"].includes(String(item.stage || "").toLowerCase()));
+
+  focusSummary.innerHTML = `
+    <div class="list-row"><span>Open tasks</span><strong>${openTasks.length}</strong></div>
+    <div class="list-row"><span>Active deals</span><strong>${activeDeals.length}</strong></div>
+    <div class="list-row"><span>Late-stage deals</span><strong>${proposalDeals.length}</strong></div>
+    <div class="list-row"><span>Active accounts</span><strong>${activeOrganizations.length}</strong></div>
+  `;
+
+  teamTaskList.innerHTML = openTasks.slice(0, 6).map((item) => {
+    const organization = state.organizations.find((entry) => entry.id === item.organization_id);
+    return `
+      <div class="compact-row">
+        <div>
+          <strong>${item.title}</strong>
+          <div class="muted small">${organization ? organization.name : "No organization"}</div>
+        </div>
+        <span class="pill">${item.priority || item.status}</span>
+      </div>
+    `;
+  }).join("") || `<span class="muted small">No open tasks.</span>`;
+
+  teamDealList.innerHTML = activeDeals.slice(0, 6).map((item) => {
+    const organization = state.organizations.find((entry) => entry.id === item.organization_id);
+    return `
+      <div class="compact-row">
+        <div>
+          <strong>${item.name}</strong>
+          <div class="muted small">${organization ? organization.name : "No organization"} • ${item.stage}</div>
+        </div>
+        <span class="pill">${item.value_currency} ${Number(item.value_amount || 0).toLocaleString()}</span>
+      </div>
+    `;
+  }).join("") || `<span class="muted small">No active deals.</span>`;
+
+  teamOrganizationList.innerHTML = activeOrganizations.map((item) => `
+    <div class="compact-row">
+      <div>
+        <strong>${item.name}</strong>
+        <div class="muted small">${item.domain || "no domain"} • ${item.industry || "no industry"}</div>
+      </div>
+      <span class="pill">account</span>
+    </div>
+  `).join("") || `<span class="muted small">No active accounts yet.</span>`;
 }
 
 function setWorkerStatus(isLive) {
@@ -255,6 +420,39 @@ function renderTasks() {
   });
 }
 
+function renderWebhookEndpoints() {
+  renderEntityCards("admin-endpoint-list", state.webhookEndpoints, (item) => `
+    <strong>${item.name}</strong>
+    <div class="muted small endpoint-url">${item.target_url}</div>
+    <div class="entity-meta">
+      <span class="pill">${item.status}</span>
+      <span class="pill">id ${item.id}</span>
+    </div>
+    <div class="entity-card-actions">
+      <button type="button" class="ghost small-button" data-edit-type="endpoint" data-edit-id="${item.id}">Edit</button>
+      <button type="button" class="ghost small-button" data-delete-type="endpoint" data-delete-id="${item.id}">Delete</button>
+    </div>
+  `);
+}
+
+function renderWebhookSubscriptions() {
+  renderEntityCards("admin-subscription-list", state.webhookSubscriptions, (item) => {
+    const endpoint = state.webhookEndpoints.find((entry) => entry.id === item.webhook_endpoint_id);
+    return `
+      <strong>${item.event_type}</strong>
+      <div class="muted small">${endpoint ? endpoint.name : "Unknown endpoint"}</div>
+      <div class="entity-meta">
+        <span class="pill">${item.is_active ? "active" : "inactive"}</span>
+        <span class="pill">id ${item.id}</span>
+      </div>
+      <div class="entity-card-actions">
+        <button type="button" class="ghost small-button" data-edit-type="subscription" data-edit-id="${item.id}">Edit</button>
+        <button type="button" class="ghost small-button" data-delete-type="subscription" data-delete-id="${item.id}">Delete</button>
+      </div>
+    `;
+  });
+}
+
 function renderEventList(targetId, items, kind) {
   const target = document.getElementById(targetId);
   target.innerHTML = "";
@@ -311,6 +509,29 @@ function renderAudit() {
         </header>
       </article>`;
   });
+}
+
+function renderAdminCenter() {
+  const tenantSummary = document.getElementById("tenant-summary");
+  const workspacePolicy = document.getElementById("workspace-policy");
+
+  tenantSummary.innerHTML = `
+    <div class="list-row"><span>Tenant</span><strong>${state.session?.tenant_slug || "n/a"}</strong></div>
+    <div class="list-row"><span>User</span><strong>${state.session?.email || "n/a"}</strong></div>
+    <div class="list-row"><span>Role</span><strong>${state.session?.role || "n/a"}</strong></div>
+    <div class="list-row"><span>Organizations</span><strong>${state.organizations.length}</strong></div>
+    <div class="list-row"><span>Deals</span><strong>${state.deals.length}</strong></div>
+    <div class="list-row"><span>Endpoints</span><strong>${state.webhookEndpoints.length}</strong></div>
+  `;
+
+  workspacePolicy.innerHTML = `
+    <div class="list-row"><span>Admin view</span><strong>sales + ops + settings</strong></div>
+    <div class="list-row"><span>Team member view</span><strong>sales-first workspace</strong></div>
+    <div class="list-row"><span>Current mode</span><strong>${currentWorkspaceMode()}</strong></div>
+  `;
+
+  renderWebhookEndpoints();
+  renderWebhookSubscriptions();
 }
 
 function buildTimeline(organization) {
@@ -480,6 +701,16 @@ function populateDealSelect() {
   });
 }
 
+function populateSubscriptionEndpointSelect() {
+  subscriptionEndpointSelect.innerHTML = '<option value="">Select endpoint</option>';
+  state.webhookEndpoints.forEach((item) => {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = item.name;
+    subscriptionEndpointSelect.appendChild(option);
+  });
+}
+
 function setEditMode(kind, id) {
   state.editing[`${kind}Id`] = id;
   const submitMap = {
@@ -487,12 +718,16 @@ function setEditMode(kind, id) {
     deal: dealSubmit,
     person: personSubmit,
     task: taskSubmit,
+    endpoint: endpointSubmit,
+    subscription: subscriptionSubmit,
   };
   const cancelMap = {
     organization: organizationCancel,
     deal: dealCancel,
     person: personCancel,
     task: taskCancel,
+    endpoint: endpointCancel,
+    subscription: subscriptionCancel,
   };
   submitMap[kind].textContent = `Save ${kind.charAt(0).toUpperCase() + kind.slice(1)}`;
   cancelMap[kind].classList.remove("hidden");
@@ -505,18 +740,24 @@ function clearEditMode(kind) {
     deal: "Create Deal",
     person: "Create Person",
     task: "Create Task",
+    endpoint: "Create Endpoint",
+    subscription: "Create Subscription",
   };
   const submitMap = {
     organization: organizationSubmit,
     deal: dealSubmit,
     person: personSubmit,
     task: taskSubmit,
+    endpoint: endpointSubmit,
+    subscription: subscriptionSubmit,
   };
   const cancelMap = {
     organization: organizationCancel,
     deal: dealCancel,
     person: personCancel,
     task: taskCancel,
+    endpoint: endpointCancel,
+    subscription: subscriptionCancel,
   };
   submitMap[kind].textContent = submitText[kind];
   cancelMap[kind].classList.add("hidden");
@@ -567,6 +808,27 @@ function startEditTask(id) {
   setEditMode("task", id);
 }
 
+function startEditEndpoint(id) {
+  const item = state.webhookEndpoints.find((entry) => entry.id === id);
+  if (!item) return;
+  endpointForm.elements.namedItem("name").value = item.name || "";
+  endpointForm.elements.namedItem("target_url").value = item.target_url || "";
+  endpointForm.elements.namedItem("signing_secret").value = item.signing_secret || "";
+  endpointForm.elements.namedItem("status").value = item.status || "active";
+  endpointResult.textContent = `Editing endpoint ${item.name}.`;
+  setEditMode("endpoint", id);
+}
+
+function startEditSubscription(id) {
+  const item = state.webhookSubscriptions.find((entry) => entry.id === id);
+  if (!item) return;
+  subscriptionEndpointSelect.value = item.webhook_endpoint_id || "";
+  subscriptionForm.elements.namedItem("event_type").value = item.event_type || "";
+  subscriptionForm.elements.namedItem("is_active").value = String(Boolean(item.is_active));
+  subscriptionResult.textContent = `Editing subscription ${item.event_type}.`;
+  setEditMode("subscription", id);
+}
+
 function primeTaskFromDeal(id) {
   const deal = state.deals.find((entry) => entry.id === id);
   if (!deal) return;
@@ -585,13 +847,15 @@ async function deleteEntity(kind, id) {
     deal: "deals",
     person: "people",
     task: "tasks",
+    endpoint: "webhook-endpoints",
+    subscription: "webhook-subscriptions",
   };
   await api(`/${routeMap[kind]}/${id}`, { method: "DELETE" });
   await loadDashboard();
 }
 
 async function loadDashboard() {
-  const [outboxStats, deliveryStats, failedOutbox, failedDeliveries, audit, organizations, deals, people, tasks] = await Promise.all([
+  const [outboxStats, deliveryStats, failedOutbox, failedDeliveries, audit, organizations, deals, people, tasks, webhookEndpoints, webhookSubscriptions] = await Promise.all([
     api("/outbox-events/stats"),
     api("/webhook-deliveries/stats"),
     api("/outbox-events?status=failed&limit=10"),
@@ -601,12 +865,16 @@ async function loadDashboard() {
     api("/deals"),
     api("/people"),
     api("/tasks"),
+    api("/webhook-endpoints"),
+    api("/webhook-subscriptions"),
   ]);
 
   state.organizations = organizations || [];
   state.deals = deals || [];
   state.people = people || [];
   state.tasks = tasks || [];
+  state.webhookEndpoints = webhookEndpoints || [];
+  state.webhookSubscriptions = webhookSubscriptions || [];
   state.outboxFailed = failedOutbox || [];
   state.deliveryFailed = failedDeliveries || [];
   state.audit = audit || [];
@@ -618,10 +886,13 @@ async function loadDashboard() {
   renderStatusCards("outbox-status-cards", outboxStats.by_status || []);
   renderStatusCards("delivery-status-cards", deliveryStats.by_status || []);
   renderRankedList("event-type-list", outboxStats.by_event_type || [], "event_type");
-  renderRankedList("endpoint-list", deliveryStats.by_endpoint || [], "endpoint_name");
+  renderRankedList("endpoint-traffic-list", deliveryStats.by_endpoint || [], "endpoint_name");
+  renderWorkspaceFocus();
+  renderTeamHub();
   renderPipeline(state.deals);
   populateOrganizationSelect();
   populateDealSelect();
+  populateSubscriptionEndpointSelect();
   renderOrganizations();
   renderDeals();
   renderPeople();
@@ -629,6 +900,7 @@ async function loadDashboard() {
   renderEventList("outbox-failed-list", state.outboxFailed, "outbox");
   renderEventList("delivery-failed-list", state.deliveryFailed, "delivery");
   renderAudit();
+  renderAdminCenter();
   setWorkerStatus((outboxStats.by_status || []).length > 0);
 }
 
@@ -636,6 +908,8 @@ function showApp() {
   authPanel.classList.add("hidden");
   appPanel.classList.remove("hidden");
   sessionBadge.textContent = `${state.session.email} @ ${state.session.tenant_slug}`;
+  roleBadge.textContent = state.session.role || "member";
+  applyWorkspaceMode();
 }
 
 function showLogin() {
@@ -729,6 +1003,46 @@ async function submitTask(event) {
   }
 }
 
+async function submitEndpoint(event) {
+  event.preventDefault();
+  const body = Object.fromEntries(new FormData(endpointForm).entries());
+  try {
+    const isEdit = state.editing.endpointId != null;
+    const result = await api(isEdit ? `/webhook-endpoints/${state.editing.endpointId}` : "/webhook-endpoints", {
+      method: isEdit ? "PUT" : "POST",
+      body: JSON.stringify(body),
+    });
+    endpointResult.textContent = `${isEdit ? "Updated" : "Created"} endpoint ${result.name}.`;
+    endpointForm.reset();
+    endpointForm.elements.namedItem("status").value = "active";
+    clearEditMode("endpoint");
+    await loadDashboard();
+  } catch (error) {
+    endpointResult.textContent = error.message;
+  }
+}
+
+async function submitSubscription(event) {
+  event.preventDefault();
+  const body = Object.fromEntries(new FormData(subscriptionForm).entries());
+  body.webhook_endpoint_id = Number(body.webhook_endpoint_id);
+  body.is_active = body.is_active === "true";
+  try {
+    const isEdit = state.editing.subscriptionId != null;
+    const result = await api(isEdit ? `/webhook-subscriptions/${state.editing.subscriptionId}` : "/webhook-subscriptions", {
+      method: isEdit ? "PUT" : "POST",
+      body: JSON.stringify(body),
+    });
+    subscriptionResult.textContent = `${isEdit ? "Updated" : "Created"} subscription ${result.event_type}.`;
+    subscriptionForm.reset();
+    subscriptionForm.elements.namedItem("is_active").value = "true";
+    clearEditMode("subscription");
+    await loadDashboard();
+  } catch (error) {
+    subscriptionResult.textContent = error.message;
+  }
+}
+
 function cancelEdit(kind, form, resultEl, resetSelect) {
   form.reset();
   resultEl.textContent = "";
@@ -750,7 +1064,12 @@ loginForm.addEventListener("submit", async (event) => {
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" },
     });
-    setSession(result.token, { email: result.email, tenant_slug: result.tenant_slug });
+    setSession(result.token, {
+      email: result.email,
+      tenant_slug: result.tenant_slug,
+      role: result.role,
+      user_id: result.user_id,
+    });
     showApp();
     await loadDashboard();
   } catch (error) {
@@ -772,11 +1091,18 @@ organizationForm.addEventListener("submit", submitOrganization);
 dealForm.addEventListener("submit", submitDeal);
 personForm.addEventListener("submit", submitPerson);
 taskForm.addEventListener("submit", submitTask);
+endpointForm.addEventListener("submit", submitEndpoint);
+subscriptionForm.addEventListener("submit", submitSubscription);
 
 organizationCancel.addEventListener("click", () => cancelEdit("organization", organizationForm, organizationResult));
 dealCancel.addEventListener("click", () => cancelEdit("deal", dealForm, dealResult, dealOrganizationSelect));
 personCancel.addEventListener("click", () => cancelEdit("person", personForm, personResult, personOrganizationSelect));
 taskCancel.addEventListener("click", () => cancelEdit("task", taskForm, taskResult, taskOrganizationSelect));
+endpointCancel.addEventListener("click", () => cancelEdit("endpoint", endpointForm, endpointResult));
+subscriptionCancel.addEventListener("click", () => cancelEdit("subscription", subscriptionForm, subscriptionResult, subscriptionEndpointSelect));
+
+viewAdmin.addEventListener("click", () => setWorkspaceMode("admin"));
+viewTeam.addEventListener("click", () => setWorkspaceMode("team"));
 
 document.addEventListener("click", async (event) => {
   const editButton = event.target.closest("[data-edit-type]");
@@ -787,6 +1113,8 @@ document.addEventListener("click", async (event) => {
     if (type === "deal") startEditDeal(id);
     if (type === "person") startEditPerson(id);
     if (type === "task") startEditTask(id);
+    if (type === "endpoint") startEditEndpoint(id);
+    if (type === "subscription") startEditSubscription(id);
     if (type === "task-from-deal") primeTaskFromDeal(id);
     return;
   }

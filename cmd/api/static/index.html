@@ -51,9 +51,15 @@
           <a href="#tasks" class="nav-item">Tasks</a>
         </nav>
 
-        <div class="nav-separator">OPERATIONS</div>
+        <div class="nav-separator admin-only">ADMIN</div>
 
-        <nav class="nav-block nav-block-ops">
+        <nav class="nav-block admin-only">
+          <a href="#admin-center" class="nav-item">Admin Center</a>
+        </nav>
+
+        <div class="nav-separator ops-only admin-only">OPERATIONS</div>
+
+        <nav class="nav-block nav-block-ops ops-only admin-only">
           <a href="#outbox-monitor" class="nav-item">Outbox</a>
           <a href="#webhooks-monitor" class="nav-item">Webhooks</a>
           <a href="#audit-monitor" class="nav-item">Audit Log</a>
@@ -71,7 +77,12 @@
             <input id="command-search" type="text" placeholder="Search organizations, deals, contacts, tasks">
           </label>
           <div class="topbar-right">
+            <span id="role-badge" class="badge subtle-badge"></span>
             <span id="session-badge" class="badge"></span>
+            <div id="workspace-switcher" class="segmented-control hidden">
+              <button type="button" id="view-admin" class="segmented-item active">Admin View</button>
+              <button type="button" id="view-team" class="segmented-item">Team View</button>
+            </div>
             <div class="worker-status">
               <span id="worker-led" class="led"></span>
               <span id="worker-status-text">Worker Live</span>
@@ -115,7 +126,129 @@
                 <h3>Top Endpoints</h3>
                 <span class="muted small">delivery traffic</span>
               </div>
-              <div id="endpoint-list" class="stack"></div>
+              <div id="endpoint-traffic-list" class="stack"></div>
+            </article>
+            <article class="panel team-summary-panel">
+              <div class="section-head">
+                <h3>Workspace Focus</h3>
+                <span class="muted small">role-aware view</span>
+              </div>
+              <div id="workspace-focus" class="stack"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="team-hub" class="content-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Team Workspace</p>
+              <h2>Daily Focus</h2>
+            </div>
+            <span class="muted small">execution for the front line</span>
+          </div>
+
+          <div class="stats-grid admin-grid">
+            <article class="panel">
+              <div class="section-head">
+                <h3>Today</h3>
+                <span class="muted small">what needs movement</span>
+              </div>
+              <div id="team-focus-summary" class="stack"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>My Open Tasks</h3>
+                <span class="muted small">priority queue</span>
+              </div>
+              <div id="team-task-list" class="compact-list"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>My Active Deals</h3>
+                <span class="muted small">revenue in motion</span>
+              </div>
+              <div id="team-deal-list" class="compact-list"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Account Pulse</h3>
+                <span class="muted small">recent customer movement</span>
+              </div>
+              <div id="team-organization-list" class="compact-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="admin-center" class="content-section admin-only">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Administration</p>
+              <h2>Admin Center</h2>
+            </div>
+            <span class="muted small">tenant controls and webhook governance</span>
+          </div>
+
+          <div class="stats-grid admin-grid">
+            <article class="panel">
+              <div class="section-head">
+                <h3>Tenant Summary</h3>
+                <span class="muted small">current workspace</span>
+              </div>
+              <div id="tenant-summary" class="stack"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Workspace Policy</h3>
+                <span class="muted small">admin vs team member</span>
+              </div>
+              <div id="workspace-policy" class="stack"></div>
+            </article>
+          </div>
+
+          <div class="split-layout admin-management-grid">
+            <article class="panel">
+              <div class="section-head">
+                <h3>Webhook Endpoints</h3>
+                <span class="muted small">delivery targets</span>
+              </div>
+              <form id="endpoint-form" class="inline-form">
+                <input type="text" name="name" placeholder="Primary Endpoint" required>
+                <input type="url" name="target_url" placeholder="https://example.com/webhook" required>
+                <input type="text" name="signing_secret" placeholder="super-secret" required>
+                <select name="status">
+                  <option value="active">active</option>
+                  <option value="disabled">disabled</option>
+                </select>
+                <div class="form-actions">
+                  <button type="submit" id="endpoint-submit">Create Endpoint</button>
+                  <button type="button" id="endpoint-cancel" class="ghost hidden">Cancel</button>
+                </div>
+              </form>
+              <p id="endpoint-result" class="muted"></p>
+              <div id="admin-endpoint-list" class="entity-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="section-head">
+                <h3>Webhook Subscriptions</h3>
+                <span class="muted small">event routing</span>
+              </div>
+              <form id="subscription-form" class="inline-form">
+                <select id="subscription-endpoint-id" name="webhook_endpoint_id" required>
+                  <option value="">Select endpoint</option>
+                </select>
+                <input type="text" name="event_type" placeholder="organization.created" required>
+                <select name="is_active">
+                  <option value="true">active</option>
+                  <option value="false">inactive</option>
+                </select>
+                <div class="form-actions">
+                  <button type="submit" id="subscription-submit">Create Subscription</button>
+                  <button type="button" id="subscription-cancel" class="ghost hidden">Cancel</button>
+                </div>
+              </form>
+              <p id="subscription-result" class="muted"></p>
+              <div id="admin-subscription-list" class="entity-list"></div>
             </article>
           </div>
         </section>
@@ -240,7 +373,7 @@
           </article>
         </section>
 
-        <section id="outbox-monitor" class="content-section split-layout">
+        <section id="outbox-monitor" class="content-section split-layout ops-only admin-only">
           <article class="panel">
             <div class="section-head">
               <h3>Outbox Monitor</h3>
@@ -258,7 +391,7 @@
           </article>
         </section>
 
-        <section id="audit-monitor" class="content-section"></section>
+        <section id="audit-monitor" class="content-section ops-only admin-only"></section>
       </div>
     </section>
   </main>

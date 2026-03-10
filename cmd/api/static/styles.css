@@ -461,12 +461,18 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--line);
   background: white;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
 }
 
 button {
@@ -503,6 +509,16 @@ button.ghost {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.inline-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inline-filters select {
+  max-width: 220px;
 }
 
 .entity-card,
@@ -676,6 +692,12 @@ pre {
   background: rgba(15, 23, 42, 0.04);
   font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
   font-size: 0.78rem;
+}
+
+.note-body {
+  margin: 12px 0 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .error { color: var(--bad); }

@@ -314,6 +314,21 @@
             </div>
             <span class="muted small">High-signal Kanban</span>
           </div>
+          <div class="inline-filters">
+            <select id="deal-stage-filter">
+              <option value="">All stages</option>
+              <option value="lead">lead</option>
+              <option value="proposal">proposal</option>
+              <option value="negotiation">negotiation</option>
+              <option value="won">won</option>
+            </select>
+            <select id="task-priority-filter">
+              <option value="">All priorities</option>
+              <option value="high">high</option>
+              <option value="medium">medium</option>
+              <option value="low">low</option>
+            </select>
+          </div>
           <div id="pipeline-board" class="pipeline-board"></div>
         </section>
 
@@ -424,6 +439,45 @@
             </div>
             <div id="audit-list" class="event-list compact"></div>
           </article>
+        </section>
+
+        <section id="activity-feed" class="content-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Sales Activity</p>
+              <h2>Notes and Activity</h2>
+            </div>
+            <span class="muted small">commercial context</span>
+          </div>
+          <div class="split-layout">
+            <article class="panel">
+              <div class="section-head">
+                <h3>Quick Note</h3>
+                <span class="muted small">manual context capture</span>
+              </div>
+              <form id="note-form" class="inline-form">
+                <select id="note-organization-id" name="organization_id">
+                  <option value="">Select organization</option>
+                </select>
+                <select id="note-deal-id" name="deal_id">
+                  <option value="">Optional deal</option>
+                </select>
+                <textarea id="note-body" name="body" rows="5" placeholder="Capture call notes, objections, next steps..." required></textarea>
+                <div class="form-actions">
+                  <button type="submit" id="note-submit">Create Note</button>
+                  <button type="button" id="note-cancel" class="ghost hidden">Cancel</button>
+                </div>
+              </form>
+              <p id="note-result" class="muted"></p>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Recent Notes</h3>
+                <span class="muted small">latest field intelligence</span>
+              </div>
+              <div id="notes-list" class="event-list"></div>
+            </article>
+          </div>
         </section>
 
         <section id="outbox-monitor" class="content-section split-layout ops-only admin-only">

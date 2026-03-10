@@ -6,6 +6,7 @@ const state = {
   deals: [],
   people: [],
   tasks: [],
+  notes: [],
   webhookEndpoints: [],
   webhookSubscriptions: [],
   outboxFailed: [],
@@ -17,8 +18,13 @@ const state = {
     dealId: null,
     personId: null,
     taskId: null,
+    noteId: null,
     endpointId: null,
     subscriptionId: null,
+  },
+  filters: {
+    dealStage: "",
+    taskPriority: "",
   },
 };
 
@@ -58,6 +64,14 @@ const taskOrganizationSelect = document.getElementById("task-organization-id");
 const taskDealSelect = document.getElementById("task-deal-id");
 const taskSubmit = document.getElementById("task-submit");
 const taskCancel = document.getElementById("task-cancel");
+const noteForm = document.getElementById("note-form");
+const noteResult = document.getElementById("note-result");
+const noteSubmit = document.getElementById("note-submit");
+const noteCancel = document.getElementById("note-cancel");
+const noteOrganizationSelect = document.getElementById("note-organization-id");
+const noteDealSelect = document.getElementById("note-deal-id");
+const dealStageFilter = document.getElementById("deal-stage-filter");
+const taskPriorityFilter = document.getElementById("task-priority-filter");
 
 const endpointForm = document.getElementById("endpoint-form");
 const endpointResult = document.getElementById("endpoint-result");
@@ -471,6 +485,7 @@ function setWorkerStatus(isLive) {
 
 function renderPipeline(deals) {
   const board = document.getElementById("pipeline-board");
+  const filteredDeals = deals.filter((deal) => !state.filters.dealStage || deal.stage === state.filters.dealStage);
   const columns = [
     { id: "lead", label: "Lead" },
     { id: "proposal", label: "Proposal" },
@@ -481,7 +496,7 @@ function renderPipeline(deals) {
   board.innerHTML = "";
 
   columns.forEach((column) => {
-    const columnDeals = deals.filter((deal) => deal.stage === column.id || (column.id === "lead" && !["proposal", "negotiation", "won"].includes(deal.stage)));
+    const columnDeals = filteredDeals.filter((deal) => deal.stage === column.id || (column.id === "lead" && !["proposal", "negotiation", "won"].includes(deal.stage)));
     const node = document.createElement("div");
     node.className = "pipeline-column";
     node.innerHTML = `
@@ -622,7 +637,8 @@ function renderPeople() {
 }
 
 function renderTasks() {
-  renderEntityCards("task-list", state.tasks, (item) => {
+  const filteredTasks = state.tasks.filter((item) => !state.filters.taskPriority || String(item.priority || "").toLowerCase() === state.filters.taskPriority);
+  renderEntityCards("task-list", filteredTasks, (item) => {
     const organization = state.organizations.find((org) => org.id === item.organization_id);
     const deal = state.deals.find((entry) => entry.id === item.deal_id);
     return `
@@ -637,6 +653,32 @@ function renderTasks() {
         <button type="button" class="ghost small-button" data-edit-type="task" data-edit-id="${item.id}">Edit</button>
         <button type="button" class="ghost small-button" data-delete-type="task" data-delete-id="${item.id}">Delete</button>
       </div>
+    `;
+  });
+}
+
+function renderNotes() {
+  const target = document.getElementById("notes-list");
+  target.innerHTML = "";
+  if (!state.notes.length) {
+    target.innerHTML = `<div class="event-card"><span class="muted">No notes yet.</span></div>`;
+    return;
+  }
+
+  state.notes.slice(0, 10).forEach((item) => {
+    const organization = state.organizations.find((entry) => entry.id === item.organization_id);
+    const deal = state.deals.find((entry) => entry.id === item.deal_id);
+    target.innerHTML += `
+      <article class="event-card">
+        <header>
+          <div>
+            <strong>${organization ? organization.name : "General note"}</strong>
+            <div class="muted small">${deal ? deal.name + " • " : ""}${new Date(item.created_at).toLocaleString()}</div>
+          </div>
+          <span class="pill">${item.source}</span>
+        </header>
+        <p class="note-body">${item.body}</p>
+      </article>
     `;
   });
 }
@@ -897,7 +939,7 @@ function renderOrganizationDetail(organization) {
 }
 
 function populateOrganizationSelect() {
-  const selects = [dealOrganizationSelect, personOrganizationSelect, taskOrganizationSelect];
+  const selects = [dealOrganizationSelect, personOrganizationSelect, taskOrganizationSelect, noteOrganizationSelect];
   selects.forEach((select) => {
     select.innerHTML = '<option value="">Select organization</option>';
     state.organizations.forEach((item) => {
@@ -913,12 +955,14 @@ function populateOrganizationSelect() {
 }
 
 function populateDealSelect() {
-  taskDealSelect.innerHTML = '<option value="">Optional deal</option>';
-  state.deals.forEach((item) => {
-    const option = document.createElement("option");
-    option.value = item.id;
-    option.textContent = item.name;
-    taskDealSelect.appendChild(option);
+  [taskDealSelect, noteDealSelect].forEach((select) => {
+    select.innerHTML = '<option value="">Optional deal</option>';
+    state.deals.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item.id;
+      option.textContent = item.name;
+      select.appendChild(option);
+    });
   });
 }
 
@@ -939,6 +983,7 @@ function setEditMode(kind, id) {
     deal: dealSubmit,
     person: personSubmit,
     task: taskSubmit,
+    note: noteSubmit,
     endpoint: endpointSubmit,
     subscription: subscriptionSubmit,
   };
@@ -947,6 +992,7 @@ function setEditMode(kind, id) {
     deal: dealCancel,
     person: personCancel,
     task: taskCancel,
+    note: noteCancel,
     endpoint: endpointCancel,
     subscription: subscriptionCancel,
   };
@@ -961,6 +1007,7 @@ function clearEditMode(kind) {
     deal: "Create Deal",
     person: "Create Person",
     task: "Create Task",
+    note: "Create Note",
     endpoint: "Create Endpoint",
     subscription: "Create Subscription",
   };
@@ -969,6 +1016,7 @@ function clearEditMode(kind) {
     deal: dealSubmit,
     person: personSubmit,
     task: taskSubmit,
+    note: noteSubmit,
     endpoint: endpointSubmit,
     subscription: subscriptionSubmit,
   };
@@ -977,6 +1025,7 @@ function clearEditMode(kind) {
     deal: dealCancel,
     person: personCancel,
     task: taskCancel,
+    note: noteCancel,
     endpoint: endpointCancel,
     subscription: subscriptionCancel,
   };
@@ -1076,7 +1125,7 @@ async function deleteEntity(kind, id) {
 }
 
 async function loadDashboard() {
-  const [outboxStats, deliveryStats, failedOutbox, failedDeliveries, audit, organizations, deals, people, tasks, webhookEndpoints, webhookSubscriptions] = await Promise.all([
+  const [outboxStats, deliveryStats, failedOutbox, failedDeliveries, audit, organizations, deals, people, tasks, notes, webhookEndpoints, webhookSubscriptions] = await Promise.all([
     api("/outbox-events/stats"),
     api("/webhook-deliveries/stats"),
     api("/outbox-events?status=failed&limit=10"),
@@ -1086,6 +1135,7 @@ async function loadDashboard() {
     api("/deals"),
     api("/people"),
     api("/tasks"),
+    api("/notes"),
     api("/webhook-endpoints"),
     api("/webhook-subscriptions"),
   ]);
@@ -1094,6 +1144,7 @@ async function loadDashboard() {
   state.deals = deals || [];
   state.people = people || [];
   state.tasks = tasks || [];
+  state.notes = notes || [];
   state.webhookEndpoints = webhookEndpoints || [];
   state.webhookSubscriptions = webhookSubscriptions || [];
   state.outboxFailed = failedOutbox || [];
@@ -1118,6 +1169,7 @@ async function loadDashboard() {
   renderDeals();
   renderPeople();
   renderTasks();
+  renderNotes();
   renderEventList("outbox-failed-list", state.outboxFailed, "outbox");
   renderEventList("delivery-failed-list", state.deliveryFailed, "delivery");
   renderAudit();
@@ -1224,6 +1276,27 @@ async function submitTask(event) {
   }
 }
 
+async function submitNote(event) {
+  event.preventDefault();
+  const body = Object.fromEntries(new FormData(noteForm).entries());
+  if (body.organization_id) body.organization_id = Number(body.organization_id); else delete body.organization_id;
+  if (body.deal_id) body.deal_id = Number(body.deal_id); else delete body.deal_id;
+  try {
+    const result = await api("/notes", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    noteResult.textContent = `Created note ${result.id}.`;
+    noteForm.reset();
+    if (state.selectedOrganizationId) {
+      noteOrganizationSelect.value = String(state.selectedOrganizationId);
+    }
+    await loadDashboard();
+  } catch (error) {
+    noteResult.textContent = error.message;
+  }
+}
+
 async function submitEndpoint(event) {
   event.preventDefault();
   const body = Object.fromEntries(new FormData(endpointForm).entries());
@@ -1312,6 +1385,7 @@ organizationForm.addEventListener("submit", submitOrganization);
 dealForm.addEventListener("submit", submitDeal);
 personForm.addEventListener("submit", submitPerson);
 taskForm.addEventListener("submit", submitTask);
+noteForm.addEventListener("submit", submitNote);
 endpointForm.addEventListener("submit", submitEndpoint);
 subscriptionForm.addEventListener("submit", submitSubscription);
 
@@ -1319,8 +1393,17 @@ organizationCancel.addEventListener("click", () => cancelEdit("organization", or
 dealCancel.addEventListener("click", () => cancelEdit("deal", dealForm, dealResult, dealOrganizationSelect));
 personCancel.addEventListener("click", () => cancelEdit("person", personForm, personResult, personOrganizationSelect));
 taskCancel.addEventListener("click", () => cancelEdit("task", taskForm, taskResult, taskOrganizationSelect));
+noteCancel.addEventListener("click", () => cancelEdit("note", noteForm, noteResult, noteOrganizationSelect));
 endpointCancel.addEventListener("click", () => cancelEdit("endpoint", endpointForm, endpointResult));
 subscriptionCancel.addEventListener("click", () => cancelEdit("subscription", subscriptionForm, subscriptionResult, subscriptionEndpointSelect));
+dealStageFilter.addEventListener("change", () => {
+  state.filters.dealStage = dealStageFilter.value;
+  renderPipeline(state.deals);
+});
+taskPriorityFilter.addEventListener("change", () => {
+  state.filters.taskPriority = taskPriorityFilter.value;
+  renderTasks();
+});
 
 viewAdmin.addEventListener("click", () => setWorkspaceMode("admin"));
 viewTeam.addEventListener("click", () => setWorkspaceMode("team"));

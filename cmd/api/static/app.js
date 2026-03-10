@@ -194,6 +194,22 @@ function renderWorkspaceFocus() {
   `).join("");
 }
 
+function renderSalesSnapshot() {
+  const target = document.getElementById("sales-snapshot");
+  const activeDeals = state.deals.filter((item) => !["won", "lost", "closed"].includes(String(item.status || "").toLowerCase()));
+  const lateStageDeals = activeDeals.filter((item) => ["proposal", "negotiation"].includes(String(item.stage || "").toLowerCase()));
+  const openTasks = state.tasks.filter((item) => !["done", "completed", "closed"].includes(String(item.status || "").toLowerCase()));
+  const pipelineValue = activeDeals.reduce((sum, item) => sum + Number(item.value_amount || 0), 0);
+  const lateStageValue = lateStageDeals.reduce((sum, item) => sum + Number(item.value_amount || 0), 0);
+
+  target.innerHTML = `
+    <div class="list-row"><span>Pipeline value</span><strong>USD ${pipelineValue.toLocaleString()}</strong></div>
+    <div class="list-row"><span>Late-stage value</span><strong>USD ${lateStageValue.toLocaleString()}</strong></div>
+    <div class="list-row"><span>Open tasks</span><strong>${openTasks.length}</strong></div>
+    <div class="list-row"><span>Notes captured</span><strong>${state.notes.length}</strong></div>
+  `;
+}
+
 function userOwnsItem(item) {
   const userID = Number(state.session?.user_id || 0);
   if (!userID) return false;
@@ -1159,6 +1175,7 @@ async function loadDashboard() {
   renderStatusCards("delivery-status-cards", deliveryStats.by_status || []);
   renderRankedList("event-type-list", outboxStats.by_event_type || [], "event_type");
   renderRankedList("endpoint-traffic-list", deliveryStats.by_endpoint || [], "endpoint_name");
+  renderSalesSnapshot();
   renderWorkspaceFocus();
   renderTeamHub();
   renderPipeline(state.deals);
@@ -1193,6 +1210,9 @@ function showLogin() {
 async function submitOrganization(event) {
   event.preventDefault();
   const body = Object.fromEntries(new FormData(organizationForm).entries());
+  if (state.session?.user_id) {
+    body.owner_user_id = Number(state.session.user_id);
+  }
   try {
     const isEdit = state.editing.organizationId != null;
     const result = await api(isEdit ? `/organizations/${state.editing.organizationId}` : "/organizations", {
@@ -1213,6 +1233,9 @@ async function submitDeal(event) {
   const body = Object.fromEntries(new FormData(dealForm).entries());
   body.organization_id = Number(body.organization_id);
   body.value_amount = Number(body.value_amount || 0);
+  if (state.session?.user_id) {
+    body.owner_user_id = Number(state.session.user_id);
+  }
   try {
     const isEdit = state.editing.dealId != null;
     const result = await api(isEdit ? `/deals/${state.editing.dealId}` : "/deals", {
@@ -1235,6 +1258,9 @@ async function submitPerson(event) {
   event.preventDefault();
   const body = Object.fromEntries(new FormData(personForm).entries());
   if (body.organization_id) body.organization_id = Number(body.organization_id); else delete body.organization_id;
+  if (state.session?.user_id) {
+    body.owner_user_id = Number(state.session.user_id);
+  }
   try {
     const isEdit = state.editing.personId != null;
     const result = await api(isEdit ? `/people/${state.editing.personId}` : "/people", {
@@ -1258,6 +1284,10 @@ async function submitTask(event) {
   const body = Object.fromEntries(new FormData(taskForm).entries());
   if (body.organization_id) body.organization_id = Number(body.organization_id); else delete body.organization_id;
   if (body.deal_id) body.deal_id = Number(body.deal_id); else delete body.deal_id;
+  if (state.session?.user_id) {
+    body.owner_user_id = Number(state.session.user_id);
+    body.created_by_user_id = Number(state.session.user_id);
+  }
   try {
     const isEdit = state.editing.taskId != null;
     const result = await api(isEdit ? `/tasks/${state.editing.taskId}` : "/tasks", {

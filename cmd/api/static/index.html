@@ -43,27 +43,81 @@
           <h2>Command Bridge</h2>
         </div>
 
-        <nav class="nav-block">
-          <a href="#dashboard" class="nav-item active">Dashboard</a>
-          <a href="#pipeline" class="nav-item">Pipeline</a>
-          <a href="#organizations" class="nav-item">Organizations</a>
-          <a href="#people" class="nav-item">People</a>
-          <a href="#tasks" class="nav-item">Tasks</a>
-        </nav>
+        <div class="sidebar-scroll">
+          <div class="nav-separator">HOME</div>
+          <nav class="nav-block">
+            <a href="#home" class="nav-item active">Home / Command Center</a>
+          </nav>
 
-        <div class="nav-separator admin-only">ADMIN</div>
+          <div class="nav-separator">CRM</div>
+          <nav class="nav-block">
+            <a href="#leads" class="nav-item">Leads <span class="nav-badge">Base</span></a>
+            <a href="#people" class="nav-item">Contacts</a>
+            <a href="#organizations" class="nav-item">Accounts / Companies</a>
+            <a href="#deals" class="nav-item">Deals / Opportunities</a>
+            <a href="#activity-feed" class="nav-item">Activities</a>
+            <a href="#tasks" class="nav-item">Tasks</a>
+            <a href="#calls" class="nav-item">Calls <span class="nav-badge">Base</span></a>
+            <a href="#meetings" class="nav-item">Meetings <span class="nav-badge">Base</span></a>
+          </nav>
 
-        <nav class="nav-block admin-only">
-          <a href="#admin-center" class="nav-item">Admin Center</a>
-        </nav>
+          <div class="nav-separator">MARKETING</div>
+          <nav class="nav-block">
+            <a href="#campaigns" class="nav-item">Campaigns <span class="nav-badge">Base</span></a>
+            <a href="#email-marketing" class="nav-item">Email Marketing <span class="nav-badge">Base</span></a>
+            <a href="#forms" class="nav-item">Forms <span class="nav-badge">Base</span></a>
+            <a href="#landing-pages" class="nav-item">Landing Pages <span class="nav-badge">Base</span></a>
+            <a href="#social-media" class="nav-item">Social Media <span class="nav-badge">Base</span></a>
+          </nav>
 
-        <div class="nav-separator ops-only admin-only">OPERATIONS</div>
+          <div class="nav-separator">SALES</div>
+          <nav class="nav-block">
+            <a href="#pipeline" class="nav-item">Pipeline</a>
+            <a href="#quotes" class="nav-item">Quotes <span class="nav-badge">Base</span></a>
+            <a href="#products" class="nav-item">Products <span class="nav-badge">Base</span></a>
+            <a href="#price-books" class="nav-item">Price Books <span class="nav-badge">Base</span></a>
+          </nav>
 
-        <nav class="nav-block nav-block-ops ops-only admin-only">
-          <a href="#outbox-monitor" class="nav-item">Outbox</a>
-          <a href="#webhooks-monitor" class="nav-item">Webhooks</a>
-          <a href="#audit-monitor" class="nav-item">Audit Log</a>
-        </nav>
+          <div class="nav-separator">SERVICE</div>
+          <nav class="nav-block">
+            <a href="#tickets" class="nav-item">Tickets <span class="nav-badge">Base</span></a>
+            <a href="#knowledge-base" class="nav-item">Knowledge Base <span class="nav-badge">Base</span></a>
+            <a href="#customer-support" class="nav-item">Customer Support <span class="nav-badge">Base</span></a>
+          </nav>
+
+          <div class="nav-separator">ANALYTICS</div>
+          <nav class="nav-block">
+            <a href="#reports-overview" class="nav-item">Reports <span class="nav-badge">Base</span></a>
+            <a href="#dashboards" class="nav-item">Dashboards</a>
+            <a href="#forecasts" class="nav-item">Forecasts</a>
+          </nav>
+
+          <div class="nav-separator">AUTOMATION</div>
+          <nav class="nav-block">
+            <a href="#workflows" class="nav-item">Workflows <span class="nav-badge">Base</span></a>
+            <a href="#sequences" class="nav-item">Sequences <span class="nav-badge">Base</span></a>
+            <a href="#lead-scoring" class="nav-item">Lead Scoring <span class="nav-badge">Base</span></a>
+          </nav>
+
+          <div class="nav-separator">DATA MANAGEMENT</div>
+          <nav class="nav-block">
+            <a href="#imports" class="nav-item">Imports <span class="nav-badge">Base</span></a>
+            <a href="#data-cleanup" class="nav-item">Data Cleanup <span class="nav-badge">Base</span></a>
+            <a href="#duplicate-management" class="nav-item">Duplicate Management <span class="nav-badge">Base</span></a>
+          </nav>
+
+          <div class="nav-separator admin-only ops-only">PLATFORM</div>
+          <nav class="nav-block admin-only ops-only">
+            <a href="#outbox-monitor" class="nav-item">Events / Outbox</a>
+            <a href="#webhooks-monitor" class="nav-item">Webhooks</a>
+            <a href="#audit-monitor" class="nav-item">Logs / Audit</a>
+          </nav>
+
+          <div class="nav-separator admin-only">ADMIN</div>
+          <nav class="nav-block admin-only">
+            <a href="#admin-center" class="nav-item">Settings / Admin</a>
+          </nav>
+        </div>
 
         <div class="sidebar-foot">
           <button id="logout-button" class="ghost small-button full-width">Logout</button>
@@ -91,81 +145,131 @@
           </div>
         </header>
 
-        <section class="bridge-rail" aria-label="Workspace glance">
-          <div id="bridge-glance" class="glance-grid"></div>
-          <nav class="jumpbar" aria-label="Section navigation">
-            <a href="#dashboard" class="jump-chip">Overview</a>
-            <a href="#reporting" class="jump-chip">Reporting</a>
-            <a href="#team-hub" class="jump-chip">Team</a>
-            <a href="#pipeline" class="jump-chip">Pipeline</a>
-            <a href="#organizations" class="jump-chip">Accounts</a>
-            <a href="#admin-center" class="jump-chip admin-only">Admin</a>
-            <a href="#outbox-monitor" class="jump-chip admin-only">Outbox</a>
-            <a href="#webhooks-monitor" class="jump-chip admin-only">Webhooks</a>
-          </nav>
+        <section id="command-center" class="content-section bridge-rail" aria-label="Workspace command center">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Super User Control</p>
+              <h1>Command Center</h1>
+            </div>
+            <span class="muted small">platform health, tenant posture, quick actions</span>
+          </div>
+
+          <div data-home-widget="summary" id="bridge-glance" class="glance-grid"></div>
+
+          <div class="split-layout command-center-grid">
+            <article class="panel" data-home-widget="platform">
+              <div class="section-head">
+                <h3>Platform Health</h3>
+                <span class="muted small">backbone and delivery posture</span>
+              </div>
+
+              <div class="command-health-grid">
+                <div>
+                  <p class="eyebrow">Outbox</p>
+                  <div id="outbox-status-cards" class="mini-grid"></div>
+                </div>
+                <div>
+                  <p class="eyebrow">Deliveries</p>
+                  <div id="delivery-status-cards" class="mini-grid"></div>
+                </div>
+              </div>
+
+              <div class="split-layout command-list-grid">
+                <div class="stack">
+                  <div class="section-head inline-head">
+                    <h3>Top Event Types</h3>
+                    <span class="muted small">signal density</span>
+                  </div>
+                  <div id="event-type-list" class="stack"></div>
+                </div>
+                <div class="stack">
+                  <div class="section-head inline-head">
+                    <h3>Top Endpoints</h3>
+                    <span class="muted small">delivery traffic</span>
+                  </div>
+                  <div id="endpoint-traffic-list" class="stack"></div>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel" data-home-widget="control">
+              <div class="section-head">
+                <h3>Admin Console</h3>
+                <span class="muted small">mode, tenant, navigation</span>
+              </div>
+              <div id="workspace-focus" class="stack"></div>
+              <div id="command-summary" class="stack command-summary"></div>
+              <div class="home-layout-card admin-only">
+                <div class="section-head inline-head">
+                  <h3>Home Layout</h3>
+                  <span class="muted small">admin configurable</span>
+                </div>
+                <form id="home-layout-form" class="widget-toggle-grid">
+                  <label class="widget-toggle"><input type="checkbox" name="summary" checked> Summary cards</label>
+                  <label class="widget-toggle"><input type="checkbox" name="platform" checked> Platform health</label>
+                  <label class="widget-toggle"><input type="checkbox" name="control" checked> Control surface</label>
+                  <label class="widget-toggle"><input type="checkbox" name="activity" checked> Activity stream</label>
+                  <label class="widget-toggle"><input type="checkbox" name="snapshot" checked> Sales snapshot</label>
+                  <label class="widget-toggle"><input type="checkbox" name="posture" checked> Admin posture</label>
+                </form>
+              </div>
+              <nav class="jumpbar" aria-label="Section navigation">
+                <a href="#home" class="jump-chip">Home</a>
+                <a href="#dashboards" class="jump-chip">Dashboards</a>
+                <a href="#forecasts" class="jump-chip">Forecasts</a>
+                <a href="#team-hub" class="jump-chip">Team</a>
+                <a href="#pipeline" class="jump-chip">Pipeline</a>
+                <a href="#organizations" class="jump-chip">Accounts</a>
+                <a href="#admin-center" class="jump-chip admin-only">Admin</a>
+                <a href="#outbox-monitor" class="jump-chip admin-only">Outbox</a>
+                <a href="#webhooks-monitor" class="jump-chip admin-only">Webhooks</a>
+              </nav>
+            </article>
+          </div>
+
+          <article class="panel" data-home-widget="activity">
+            <div class="section-head">
+              <h3>System Activity</h3>
+              <span class="muted small">events, deliveries, audit and mutations</span>
+            </div>
+            <div id="system-activity-stream" class="event-list compact"></div>
+          </article>
         </section>
 
         <section id="dashboard" class="content-section">
           <div class="section-title-row">
             <div>
-              <p class="eyebrow">Sales Core</p>
-              <h1>Dashboard</h1>
+              <p class="eyebrow">Revenue Oversight</p>
+              <h2>Executive Dashboard</h2>
             </div>
+            <span class="muted small">commercial pulse for admin and ops leadership</span>
           </div>
 
-          <div class="stats-grid">
-            <article class="panel">
-              <div class="section-head">
-                <h3>Outbox Status</h3>
-                <span class="muted small">engine health</span>
-              </div>
-              <div id="outbox-status-cards" class="mini-grid"></div>
-            </article>
-            <article class="panel">
-              <div class="section-head">
-                <h3>Webhook Delivery</h3>
-                <span class="muted small">transport health</span>
-              </div>
-              <div id="delivery-status-cards" class="mini-grid"></div>
-            </article>
-            <article class="panel">
-              <div class="section-head">
-                <h3>Top Event Types</h3>
-                <span class="muted small">signal density</span>
-              </div>
-              <div id="event-type-list" class="stack"></div>
-            </article>
-            <article class="panel">
-              <div class="section-head">
-                <h3>Top Endpoints</h3>
-                <span class="muted small">delivery traffic</span>
-              </div>
-              <div id="endpoint-traffic-list" class="stack"></div>
-            </article>
-            <article class="panel">
+          <div class="stats-grid admin-grid">
+            <article class="panel" data-home-widget="snapshot">
               <div class="section-head">
                 <h3>Sales Snapshot</h3>
                 <span class="muted small">pipeline and execution</span>
               </div>
               <div id="sales-snapshot" class="stack"></div>
             </article>
-            <article class="panel team-summary-panel">
+            <article class="panel team-summary-panel" data-home-widget="posture">
               <div class="section-head">
-                <h3>Workspace Focus</h3>
-                <span class="muted small">role-aware view</span>
+                <h3>Admin Posture</h3>
+                <span class="muted small">control scope and operating mode</span>
               </div>
-              <div id="workspace-focus" class="stack"></div>
+              <div id="dashboard-admin-posture" class="stack"></div>
             </article>
           </div>
         </section>
 
-        <section id="reporting" class="content-section">
+        <section id="dashboards" class="content-section">
           <div class="section-title-row">
             <div>
-              <p class="eyebrow">Commercial Reporting</p>
-              <h2>Revenue Signals</h2>
+              <p class="eyebrow">Reports</p>
+              <h2>Dashboards</h2>
             </div>
-            <span class="muted small">conversion, funnel, forecast</span>
+            <span class="muted small">funnel, conversion, workload</span>
           </div>
 
           <div class="stats-grid admin-grid">
@@ -185,6 +289,26 @@
             </article>
             <article class="panel">
               <div class="section-head">
+                <h3>Task Load</h3>
+                <span class="muted small">execution pressure</span>
+              </div>
+              <div id="report-task-load" class="stack"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="forecasts" class="content-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Reports</p>
+              <h2>Forecasts</h2>
+            </div>
+            <span class="muted small">weighted pipeline and closing posture</span>
+          </div>
+
+          <div class="stats-grid admin-grid">
+            <article class="panel">
+              <div class="section-head">
                 <h3>Weighted Forecast</h3>
                 <span class="muted small">simple probability model</span>
               </div>
@@ -192,10 +316,10 @@
             </article>
             <article class="panel">
               <div class="section-head">
-                <h3>Task Load</h3>
-                <span class="muted small">execution pressure</span>
+                <h3>Forecast Notes</h3>
+                <span class="muted small">operating interpretation</span>
               </div>
-              <div id="report-task-load" class="stack"></div>
+              <div id="forecast-notes" class="stack"></div>
             </article>
           </div>
         </section>
@@ -490,7 +614,7 @@
         <section id="people" class="content-section split-layout">
           <article class="panel">
             <div class="section-head">
-              <h3>People</h3>
+              <h3>Contacts</h3>
               <span class="muted small">contacts and champions</span>
             </div>
             <form id="person-form" class="inline-form">
@@ -501,7 +625,7 @@
               <input type="text" name="last_name" placeholder="Doe" required>
               <input type="email" name="email" placeholder="jane@example.com">
               <div class="form-actions">
-                <button type="submit" id="person-submit">Create Person</button>
+                <button type="submit" id="person-submit">Create Contact</button>
                 <button type="button" id="person-cancel" class="ghost hidden">Cancel</button>
               </div>
             </form>
@@ -511,7 +635,45 @@
 
           <article class="panel">
             <div class="section-head">
-              <h3>Deals</h3>
+              <h3>Contact Context</h3>
+              <span class="muted small">champions, role, account linkage</span>
+            </div>
+            <div class="detail-card">
+              <span class="muted">Use this workspace to create and manage people tied to accounts and active deals.</span>
+            </div>
+          </article>
+        </section>
+
+        <section id="leads" class="content-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">CRM</p>
+              <h2>Leads</h2>
+            </div>
+            <span class="muted small">pre-opportunity intake and qualification surface</span>
+          </div>
+          <div class="stats-grid admin-grid">
+            <article class="panel">
+              <div class="section-head">
+                <h3>Lead Inbox</h3>
+                <span class="muted small">next capture layer</span>
+              </div>
+              <div id="lead-inbox-summary" class="stack"></div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Qualification Blueprint</h3>
+                <span class="muted small">fit, urgency, source</span>
+              </div>
+              <div id="lead-blueprint" class="stack"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="deals" class="content-section split-layout">
+          <article class="panel">
+            <div class="section-head">
+              <h3>Deals / Opportunities</h3>
               <span class="muted small">revenue opportunities</span>
             </div>
             <form id="deal-form" class="inline-form">
@@ -523,12 +685,22 @@
               <input type="number" name="value_amount" step="0.01" placeholder="5000">
               <input type="text" name="value_currency" placeholder="USD">
               <div class="form-actions">
-                <button type="submit" id="deal-submit">Create Deal</button>
+                <button type="submit" id="deal-submit">Create Opportunity</button>
                 <button type="button" id="deal-cancel" class="ghost hidden">Cancel</button>
               </div>
             </form>
             <p id="deal-result" class="muted"></p>
             <div id="deal-list" class="entity-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="section-head">
+              <h3>Deal Context</h3>
+              <span class="muted small">pipeline entry and revenue shaping</span>
+            </div>
+            <div class="detail-card">
+              <span class="muted">Track open opportunities here and use the Pipeline view for stage-based execution.</span>
+            </div>
           </article>
         </section>
 
@@ -605,25 +777,264 @@
           </div>
         </section>
 
+        <section id="calls" class="content-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">CRM Activity</p>
+              <h2>Calls</h2>
+            </div>
+            <span class="muted small">call logging, summaries and follow-up</span>
+          </div>
+          <div class="stats-grid admin-grid">
+            <article class="panel">
+              <div class="section-head">
+                <h3>Call Logging</h3>
+                <span class="muted small">activity subtype</span>
+              </div>
+              <div class="detail-card">
+                <span class="muted">Calls currently live inside the general activity model. This module is the future focused surface for call outcomes, objections and next steps.</span>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Desired Actions</h3>
+                <span class="muted small">what this module should drive</span>
+              </div>
+              <div class="stack">
+                <div class="list-row"><span>Capture</span><strong>manual or synced call notes</strong></div>
+                <div class="list-row"><span>Structure</span><strong>outcome, owner, next action</strong></div>
+                <div class="list-row"><span>Hand-off</span><strong>create tasks and update deals</strong></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="meetings" class="content-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">CRM Activity</p>
+              <h2>Meetings</h2>
+            </div>
+            <span class="muted small">meeting summaries and execution trail</span>
+          </div>
+          <div class="stats-grid admin-grid">
+            <article class="panel">
+              <div class="section-head">
+                <h3>Meeting Center</h3>
+                <span class="muted small">placeholder with clear scope</span>
+              </div>
+              <div class="detail-card">
+                <span class="muted">Meetings should become a first-class activity workspace with summaries, attendees, action items and connection to accounts, contacts and opportunities.</span>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Operational Goal</h3>
+                <span class="muted small">why this module exists</span>
+              </div>
+              <div class="stack">
+                <div class="list-row"><span>Source</span><strong>calendar and manual entry</strong></div>
+                <div class="list-row"><span>Output</span><strong>summary, tasks, pipeline signal</strong></div>
+                <div class="list-row"><span>Connection</span><strong>account timeline and forecast confidence</strong></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="campaigns" class="content-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Marketing</p>
+              <h2>Campaigns</h2>
+            </div>
+            <span class="muted small">campaign orchestration and demand tracking</span>
+          </div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Campaign Workspace</h3><span class="muted small">initial module shell</span></div><div class="detail-card"><span class="muted">Use this surface to evolve toward campaign planning, channel execution and attribution into leads, contacts and pipeline.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Future Fields</h3><span class="muted small">core marketing entities</span></div><div class="stack"><div class="list-row"><span>Campaign type</span><strong>email, paid, event, social</strong></div><div class="list-row"><span>Goal</span><strong>MQLs, demos, pipeline</strong></div><div class="list-row"><span>Attribution</span><strong>lead and opportunity linkage</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="email-marketing" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Marketing</p><h2>Email Marketing</h2></div><span class="muted small">broadcasts, nurture and lifecycle email</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Email Programs</h3><span class="muted small">planned module</span></div><div class="detail-card"><span class="muted">This section is reserved for campaigns, segments, sends and engagement analytics tied to CRM records.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Activation Path</h3><span class="muted small">what comes next</span></div><div class="stack"><div class="list-row"><span>Segments</span><strong>contacts and accounts</strong></div><div class="list-row"><span>Sends</span><strong>campaign or sequence driven</strong></div><div class="list-row"><span>Feedback</span><strong>opens, clicks, replies, tasks</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="forms" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Marketing</p><h2>Forms</h2></div><span class="muted small">lead capture and inbound conversion</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Form Capture</h3><span class="muted small">planned intake surface</span></div><div class="detail-card"><span class="muted">Forms should route submissions into leads, accounts or opportunities with validation, dedupe and ownership rules.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Minimum Scope</h3><span class="muted small">implementation guardrails</span></div><div class="stack"><div class="list-row"><span>Submission storage</span><strong>required</strong></div><div class="list-row"><span>Routing</span><strong>lead or contact creation</strong></div><div class="list-row"><span>Ops trace</span><strong>audit and workflow trigger</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="landing-pages" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Marketing</p><h2>Landing Pages</h2></div><span class="muted small">conversion surfaces tied to demand capture</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Page Inventory</h3><span class="muted small">future content layer</span></div><div class="detail-card"><span class="muted">Landing pages will connect campaigns, forms and attribution. This shell keeps the module visible in the workbench architecture.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Success Criteria</h3><span class="muted small">what a real module should expose</span></div><div class="stack"><div class="list-row"><span>Page goal</span><strong>demo, signup or content capture</strong></div><div class="list-row"><span>Source</span><strong>campaign-linked traffic</strong></div><div class="list-row"><span>Outcome</span><strong>lead conversion</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="social-media" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Marketing</p><h2>Social Media</h2></div><span class="muted small">top-of-funnel signal and distribution</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Social Surface</h3><span class="muted small">planned listening and publishing layer</span></div><div class="detail-card"><span class="muted">Social belongs here as a source and engagement layer, not as an isolated tool. The future link is campaign attribution and lead creation.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Expected Outputs</h3><span class="muted small">business use</span></div><div class="stack"><div class="list-row"><span>Posts</span><strong>campaign distribution</strong></div><div class="list-row"><span>Engagement</span><strong>interest signal</strong></div><div class="list-row"><span>Conversion</span><strong>traffic into forms and landing pages</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="quotes" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Sales</p><h2>Quotes</h2></div><span class="muted small">commercial proposals and deal acceleration</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Quote Builder</h3><span class="muted small">module shell</span></div><div class="detail-card"><span class="muted">Quotes should emerge from opportunities and products. This area reserves that path inside the sales workspace.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Dependencies</h3><span class="muted small">what needs to exist first</span></div><div class="stack"><div class="list-row"><span>Source</span><strong>deal-linked</strong></div><div class="list-row"><span>Catalog</span><strong>products and pricing</strong></div><div class="list-row"><span>Outcome</span><strong>approval and close progression</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="products" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Sales</p><h2>Products</h2></div><span class="muted small">catalog and revenue building blocks</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Product Catalog</h3><span class="muted small">planned commercial object</span></div><div class="detail-card"><span class="muted">Products will anchor quotes, price books and opportunity structure. This module marks the inventory layer in the workbench.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Core Model</h3><span class="muted small">initial object design</span></div><div class="stack"><div class="list-row"><span>Name</span><strong>required</strong></div><div class="list-row"><span>SKU / code</span><strong>recommended</strong></div><div class="list-row"><span>Default price</span><strong>needed for quoting</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="price-books" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Sales</p><h2>Price Books</h2></div><span class="muted small">pricing governance by catalog and segment</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Pricing Layer</h3><span class="muted small">future commercial control</span></div><div class="detail-card"><span class="muted">Price books should manage pricing variants by region, plan or customer segment. This area reserves the control surface.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Role in Sales</h3><span class="muted small">why it matters</span></div><div class="stack"><div class="list-row"><span>Consistency</span><strong>avoid manual quote drift</strong></div><div class="list-row"><span>Governance</span><strong>approved price sets</strong></div><div class="list-row"><span>Speed</span><strong>faster proposal creation</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="reports-overview" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Reports</p><h2>Reports Overview</h2></div><span class="muted small">reporting map across dashboards and forecasts</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Reporting Surface</h3><span class="muted small">current coverage</span></div><div id="reports-overview-summary" class="stack"></div></article>
+            <article class="panel"><div class="section-head"><h3>Usage</h3><span class="muted small">who this serves</span></div><div id="reports-overview-usage" class="stack"></div></article>
+          </div>
+        </section>
+
+        <section id="tickets" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Service</p><h2>Tickets</h2></div><span class="muted small">support intake and case tracking</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Case Queue</h3><span class="muted small">future service workspace</span></div><div class="detail-card"><span class="muted">Tickets should become the service-side equivalent of tasks and opportunities, linked to accounts, contacts and support ownership.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Minimum Model</h3><span class="muted small">base shape</span></div><div class="stack"><div class="list-row"><span>Priority</span><strong>required</strong></div><div class="list-row"><span>Status</span><strong>open, pending, resolved</strong></div><div class="list-row"><span>Ownership</span><strong>agent or queue</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="knowledge-base" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Service</p><h2>Knowledge Base</h2></div><span class="muted small">repeatable answers and customer education</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Article Layer</h3><span class="muted small">future self-serve content</span></div><div class="detail-card"><span class="muted">Knowledge base content should support support teams, automation and customer self-service. This section marks that operating layer in the app.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Expected Value</h3><span class="muted small">service leverage</span></div><div class="stack"><div class="list-row"><span>Deflection</span><strong>fewer repeated tickets</strong></div><div class="list-row"><span>Consistency</span><strong>shared answers</strong></div><div class="list-row"><span>Automation</span><strong>workflow and support prompts</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="customer-support" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Service</p><h2>Customer Support</h2></div><span class="muted small">service orchestration and support posture</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Support Command</h3><span class="muted small">planned workspace shell</span></div><div class="detail-card"><span class="muted">Customer Support should unify tickets, response targets, backlog health and service ownership, similar to how Command Center unifies ops and admin.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>North Star</h3><span class="muted small">future service command center</span></div><div class="stack"><div class="list-row"><span>Inbox</span><strong>all active cases</strong></div><div class="list-row"><span>Knowledge</span><strong>linked answers</strong></div><div class="list-row"><span>Escalation</span><strong>SLA and priority handling</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="workflows" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Automation</p><h2>Workflows</h2></div><span class="muted small">rules, triggers and state transitions</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Workflow Builder</h3><span class="muted small">planned automation layer</span></div><div class="detail-card"><span class="muted">Workflows will sit on top of events, entity mutations and operational triggers. This section reserves the configuration surface.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Connection to Core</h3><span class="muted small">where automation attaches</span></div><div class="stack"><div class="list-row"><span>Triggers</span><strong>entity change or webhook event</strong></div><div class="list-row"><span>Actions</span><strong>task, status, notification, replay</strong></div><div class="list-row"><span>Traceability</span><strong>audit required</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="sequences" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Automation</p><h2>Sequences</h2></div><span class="muted small">multi-step outreach and follow-up cadence</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Sequence Engine</h3><span class="muted small">future cadence module</span></div><div class="detail-card"><span class="muted">Sequences will coordinate sales and marketing follow-up across contacts and opportunities with timing, ownership and outcomes.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Desired Outcome</h3><span class="muted small">execution intent</span></div><div class="stack"><div class="list-row"><span>Cadence</span><strong>scheduled outreach</strong></div><div class="list-row"><span>State</span><strong>pause, reply, complete</strong></div><div class="list-row"><span>Signal</span><strong>feed scoring and prioritization</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="lead-scoring" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Automation</p><h2>Lead Scoring</h2></div><span class="muted small">ranking inbound and engagement signals</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Scoring Layer</h3><span class="muted small">planned ranking system</span></div><div class="detail-card"><span class="muted">Lead scoring belongs between inbound demand and human prioritization. This shell keeps the model visible even before the scoring engine exists.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Signal Sources</h3><span class="muted small">future inputs</span></div><div class="stack"><div class="list-row"><span>Behavior</span><strong>forms, email, meetings</strong></div><div class="list-row"><span>Fit</span><strong>industry, role, size</strong></div><div class="list-row"><span>Output</span><strong>qualification priority</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="imports" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Data Management</p><h2>Imports</h2></div><span class="muted small">data entry, migration and onboarding path</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Import Center</h3><span class="muted small">migration-ready shell</span></div><div id="imports-summary" class="stack"></div></article>
+            <article class="panel"><div class="section-head"><h3>Expected Flow</h3><span class="muted small">how the module should work</span></div><div id="imports-flow" class="stack"></div></article>
+          </div>
+        </section>
+
+        <section id="data-cleanup" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Data Management</p><h2>Data Cleanup</h2></div><span class="muted small">normalization and data quality posture</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Cleanup Workspace</h3><span class="muted small">future hygiene module</span></div><div class="detail-card"><span class="muted">Data cleanup should expose invalid records, missing ownership, stale opportunities and schema normalization issues across the CRM.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>High-Value Cases</h3><span class="muted small">first things to fix</span></div><div class="stack"><div class="list-row"><span>Missing owner</span><strong>accounts, contacts, deals</strong></div><div class="list-row"><span>Low-quality fields</span><strong>email, domain, stage</strong></div><div class="list-row"><span>Stale records</span><strong>pipeline and tasks</strong></div></div></article>
+          </div>
+        </section>
+
+        <section id="duplicate-management" class="content-section">
+          <div class="section-title-row"><div><p class="eyebrow">Data Management</p><h2>Duplicate Management</h2></div><span class="muted small">merge and dedupe control surface</span></div>
+          <div class="stats-grid admin-grid">
+            <article class="panel"><div class="section-head"><h3>Dedupe Center</h3><span class="muted small">future merge workflows</span></div><div class="detail-card"><span class="muted">Duplicate Management is the future control layer for contact, account and lead collision detection with merge review and auditability.</span></div></article>
+            <article class="panel"><div class="section-head"><h3>Priority Matches</h3><span class="muted small">where to start</span></div><div class="stack"><div class="list-row"><span>Contacts</span><strong>same email or name cluster</strong></div><div class="list-row"><span>Accounts</span><strong>same domain or normalized name</strong></div><div class="list-row"><span>Leads</span><strong>repeat submissions</strong></div></div></article>
+          </div>
+        </section>
+
         <section id="outbox-monitor" class="content-section split-layout ops-only admin-only">
-          <article class="panel">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Platform</p>
+              <h2>Events / Outbox</h2>
+            </div>
+            <span class="muted small">event queue, failure pressure and replay operations</span>
+          </div>
+
+          <article class="panel console-panel">
             <div class="section-head">
               <h3>Outbox Monitor</h3>
               <button id="refresh-outbox" class="ghost small-button">Reload</button>
             </div>
+            <div id="outbox-console-summary" class="stack console-summary"></div>
             <div id="outbox-failed-list" class="event-list"></div>
           </article>
 
-          <article id="webhooks-monitor" class="panel">
+          <article id="webhooks-monitor" class="panel console-panel">
             <div class="section-head">
               <h3>Webhook Monitor</h3>
               <button id="refresh-deliveries" class="ghost small-button">Reload</button>
             </div>
+            <div id="webhook-console-summary" class="stack console-summary"></div>
             <div id="delivery-failed-list" class="event-list"></div>
           </article>
         </section>
 
-        <section id="audit-monitor" class="content-section ops-only admin-only"></section>
+        <section id="audit-monitor" class="content-section ops-only admin-only">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Platform</p>
+              <h2>Logs / Audit</h2>
+            </div>
+            <span class="muted small">traceability, actor history and mutation trail</span>
+          </div>
+          <article class="panel console-panel">
+            <div class="section-head">
+              <h3>System Audit Stream</h3>
+              <span class="muted small">latest mutations</span>
+            </div>
+            <div id="audit-monitor-stream" class="event-list"></div>
+          </article>
+        </section>
       </div>
     </section>
   </main>

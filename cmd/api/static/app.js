@@ -30,6 +30,7 @@ const state = {
     taskPriority: localStorage.getItem("crmflow_filter_task_priority") || "",
   },
   savedViews: JSON.parse(localStorage.getItem("crmflow_saved_views") || "[]"),
+  homeWidgets: JSON.parse(localStorage.getItem("crmflow_home_widgets") || "{\"summary\":true,\"platform\":true,\"control\":true,\"activity\":true,\"snapshot\":true,\"posture\":true}"),
 };
 
 const authPanel = document.getElementById("auth-panel");
@@ -97,6 +98,15 @@ const subscriptionResult = document.getElementById("subscription-result");
 const subscriptionSubmit = document.getElementById("subscription-submit");
 const subscriptionCancel = document.getElementById("subscription-cancel");
 const subscriptionEndpointSelect = document.getElementById("subscription-endpoint-id");
+const homeLayoutForm = document.getElementById("home-layout-form");
+
+const HOME_SECTION_IDS = ["command-center", "dashboard"];
+const PAGE_ALIASES = {
+  "": "home",
+  home: "home",
+  "command-center": "home",
+  dashboard: "home",
+};
 
 function setSession(token, session) {
   state.token = token;
@@ -151,6 +161,52 @@ function applyWorkspaceMode() {
 function persistFilters() {
   localStorage.setItem("crmflow_filter_deal_stage", state.filters.dealStage);
   localStorage.setItem("crmflow_filter_task_priority", state.filters.taskPriority);
+}
+
+function persistHomeWidgets() {
+  localStorage.setItem("crmflow_home_widgets", JSON.stringify(state.homeWidgets));
+}
+
+function applyHomeLayout() {
+  Object.entries(state.homeWidgets).forEach(([key, enabled]) => {
+    const element = document.querySelector(`[data-home-widget="${key}"]`);
+    if (element) {
+      element.classList.toggle("home-widget-hidden", !enabled);
+    }
+  });
+}
+
+function syncHomeLayoutControls() {
+  if (!homeLayoutForm) return;
+  Object.entries(state.homeWidgets).forEach(([key, enabled]) => {
+    const input = homeLayoutForm.elements.namedItem(key);
+    if (input) input.checked = Boolean(enabled);
+  });
+}
+
+function currentPageID() {
+  const raw = String(window.location.hash || "").replace(/^#/, "");
+  const candidate = PAGE_ALIASES[raw] || raw;
+  if (candidate === "home") return "home";
+  return document.getElementById(candidate) ? candidate : "home";
+}
+
+function applyCurrentPage() {
+  const activePage = currentPageID();
+  const sections = [...document.querySelectorAll(".content-section[id]")];
+  sections.forEach((section) => {
+    const shouldShow = activePage === "home"
+      ? HOME_SECTION_IDS.includes(section.id)
+      : section.id === activePage;
+    section.classList.toggle("page-hidden", !shouldShow);
+  });
+
+  const navItems = [...document.querySelectorAll(".nav-item[href^=\"#\"]")];
+  navItems.forEach((item) => {
+    const href = String(item.getAttribute("href") || "").replace(/^#/, "");
+    const target = PAGE_ALIASES[href] || href;
+    item.classList.toggle("active", activePage === target);
+  });
 }
 
 function renderSavedViews() {
@@ -251,12 +307,13 @@ function renderRankedList(targetId, items, labelKey) {
 
 function renderWorkspaceFocus() {
   const target = document.getElementById("workspace-focus");
+  const dashboardTarget = document.getElementById("dashboard-admin-posture");
   const mode = currentWorkspaceMode();
-  const entries = mode === "admin"
+  const controlEntries = mode === "admin"
     ? [
       { label: "Workspace", value: "Administrator" },
-      { label: "Primary focus", value: "Tenant governance and revenue ops" },
-      { label: "Controls", value: "Webhooks, outbox, audit, sales workspace" },
+      { label: "Primary focus", value: "Tenant governance, event health, revenue oversight" },
+      { label: "Controls", value: "Admin, outbox, webhooks, audit, sales workspace" },
     ]
     : [
       { label: "Workspace", value: "Team Member" },
@@ -264,12 +321,35 @@ function renderWorkspaceFocus() {
       { label: "Controls", value: "Sales workspace only" },
     ];
 
-  target.innerHTML = entries.map((item) => `
+  target.innerHTML = controlEntries.map((item) => `
     <div class="list-row">
       <span>${item.label}</span>
       <strong>${item.value}</strong>
     </div>
   `).join("");
+
+  if (dashboardTarget) {
+    const adminPostureEntries = mode === "admin"
+      ? [
+        { label: "Current mode", value: "Admin command view" },
+        { label: "Role scope", value: state.session?.role || "admin" },
+        { label: "Tenant plan", value: state.adminTenant?.plan || "starter" },
+        { label: "Ops pressure", value: `${state.deliveryFailed.length + state.outboxFailed.length} active issues` },
+      ]
+      : [
+        { label: "Current mode", value: "Team sales view" },
+        { label: "Role scope", value: state.session?.role || "member" },
+        { label: "Focus", value: "Execution and follow-up" },
+        { label: "Ops pressure", value: "Hidden from team workspace" },
+      ];
+
+    dashboardTarget.innerHTML = adminPostureEntries.map((item) => `
+      <div class="list-row">
+        <span>${item.label}</span>
+        <strong>${item.value}</strong>
+      </div>
+    `).join("");
+  }
 }
 
 function renderBridgeRail() {
@@ -298,13 +378,13 @@ function renderBridgeRail() {
         label: "Delivery Pressure",
         value: String(failedDeliveries),
         meta: failedDeliveries ? "failed deliveries" : "transport healthy",
-        tone: failedDeliveries ? "warn" : "ok",
+        tone: failedDeliveries >= 3 ? "critical" : failedDeliveries ? "warn" : "ok",
       },
       {
         label: "Event Backlog",
         value: String(failedOutbox),
         meta: failedOutbox ? "failed outbox events" : "outbox stable",
-        tone: failedOutbox ? "warn" : "ok",
+        tone: failedOutbox >= 3 ? "critical" : failedOutbox ? "warn" : "ok",
       },
     ]
     : [
@@ -338,6 +418,30 @@ function renderBridgeRail() {
       <span class="glance-meta">${item.meta}</span>
     </article>
   `).join("");
+
+  const commandSummary = document.getElementById("command-summary");
+  if (commandSummary) {
+    const summaryEntries = mode === "admin"
+      ? [
+        { label: "Tenant slug", value: state.session?.tenant_slug || "n/a" },
+        { label: "Users", value: String(state.adminUsers.length) },
+        { label: "Webhook endpoints", value: String(state.webhookEndpoints.length) },
+        { label: "Open deals", value: String(openDeals.length) },
+      ]
+      : [
+        { label: "Open tasks", value: String(openTasksForWorkspace().length) },
+        { label: "Accounts in motion", value: String(activeOrganizationsForWorkspace().length) },
+        { label: "Target account", value: targetAccount?.name || "None" },
+        { label: "Overdue", value: String(overdue.length) },
+      ];
+
+    commandSummary.innerHTML = summaryEntries.map((item) => `
+      <div class="list-row">
+        <span>${item.label}</span>
+        <strong>${item.value}</strong>
+      </div>
+    `).join("");
+  }
 }
 
 function renderAdminUsers() {
@@ -376,6 +480,7 @@ function renderCommercialReporting() {
   const conversionTarget = document.getElementById("report-conversion");
   const forecastTarget = document.getElementById("report-forecast");
   const taskLoadTarget = document.getElementById("report-task-load");
+  const forecastNotesTarget = document.getElementById("forecast-notes");
 
   const stageOrder = ["lead", "proposal", "negotiation", "won"];
   const stageWeights = {
@@ -416,12 +521,24 @@ function renderCommercialReporting() {
     return sum + Number(item.value_amount || 0) * weight;
   }, 0);
   const bestCase = openDeals.reduce((sum, item) => sum + Number(item.value_amount || 0), 0);
+  const lateStageOpen = openDeals.filter((item) => ["proposal", "negotiation"].includes(String(item.stage || "").toLowerCase()));
 
   forecastTarget.innerHTML = `
     <div class="list-row"><span>Weighted forecast</span><strong>USD ${Math.round(weightedForecast).toLocaleString()}</strong></div>
     <div class="list-row"><span>Best case pipeline</span><strong>USD ${bestCase.toLocaleString()}</strong></div>
-    <div class="list-row"><span>Late-stage open</span><strong>${openDeals.filter((item) => ["proposal", "negotiation"].includes(String(item.stage || "").toLowerCase())).length}</strong></div>
+    <div class="list-row"><span>Late-stage open</span><strong>${lateStageOpen.length}</strong></div>
   `;
+
+  if (forecastNotesTarget) {
+    const coverage = bestCase > 0 ? Math.round((weightedForecast / bestCase) * 100) : 0;
+    const dominantStage = stageRows.slice().sort((a, b) => b.value - a.value)[0];
+    forecastNotesTarget.innerHTML = `
+      <div class="list-row"><span>Coverage ratio</span><strong>${coverage}% weighted vs best case</strong></div>
+      <div class="list-row"><span>Dominant stage</span><strong>${dominantStage?.stage || "lead"}</strong></div>
+      <div class="list-row"><span>Late-stage value</span><strong>USD ${lateStageOpen.reduce((sum, item) => sum + Number(item.value_amount || 0), 0).toLocaleString()}</strong></div>
+      <div class="list-row"><span>Closing posture</span><strong>${lateStageOpen.length ? "watch negotiation quality" : "build late-stage pipeline"}</strong></div>
+    `;
+  }
 
   const openTasks = state.tasks.filter((item) => !["done", "completed", "closed"].includes(String(item.status || "").toLowerCase()));
   const highTasks = openTasks.filter((item) => String(item.priority || "").toLowerCase() === "high");
@@ -433,6 +550,168 @@ function renderCommercialReporting() {
     <div class="list-row"><span>High priority</span><strong>${highTasks.length}</strong></div>
     <div class="list-row"><span>Due today</span><strong>${today.length}</strong></div>
     <div class="list-row"><span>Overdue</span><strong>${overdue.length}</strong></div>
+  `;
+}
+
+function renderSystemActivityStream() {
+  const target = document.getElementById("system-activity-stream");
+  if (!target) return;
+
+  const activity = [
+    ...state.audit.slice(0, 8).map((item) => ({
+      ts: item.created_at,
+      title: `${item.entity_type} ${item.action}`,
+      detail: `entity ${item.entity_id}`,
+      kind: "audit",
+      tone: "neutral",
+    })),
+    ...state.outboxFailed.slice(0, 5).map((item) => ({
+      ts: item.created_at,
+      title: `outbox ${item.event_type}`,
+      detail: item.last_error || "failed event requires attention",
+      kind: "event",
+      tone: "warn",
+    })),
+    ...state.deliveryFailed.slice(0, 5).map((item) => ({
+      ts: item.created_at,
+      title: `delivery #${item.id} ${item.event_type || "webhook"}`,
+      detail: item.last_error || "delivery failure detected",
+      kind: "delivery",
+      tone: "warn",
+    })),
+  ]
+    .filter((item) => item.ts)
+    .sort((a, b) => new Date(b.ts) - new Date(a.ts))
+    .slice(0, 10);
+
+  if (!activity.length) {
+    target.innerHTML = `<div class="event-card"><span class="muted">No system activity yet.</span></div>`;
+    return;
+  }
+
+  target.innerHTML = activity.map((item) => `
+    <article class="event-card">
+      <header>
+        <div>
+          <strong>${item.title}</strong>
+          <div class="muted small">${item.kind} • ${item.detail}</div>
+        </div>
+        <span class="status ${item.tone === "warn" ? "status-failed" : "status-processed"}">${item.kind}</span>
+      </header>
+      <div class="muted small">${new Date(item.ts).toLocaleString()}</div>
+    </article>
+  `).join("");
+}
+
+function renderPlatformConsole() {
+  const outboxSummary = document.getElementById("outbox-console-summary");
+  const webhookSummary = document.getElementById("webhook-console-summary");
+  const auditStream = document.getElementById("audit-monitor-stream");
+
+  if (outboxSummary) {
+    outboxSummary.innerHTML = `
+      <div class="list-row"><span>Failed events</span><strong>${state.outboxFailed.length}</strong></div>
+      <div class="list-row"><span>Replay available</span><strong>${state.outboxFailed.length ? "yes" : "idle"}</strong></div>
+      <div class="list-row"><span>Operator stance</span><strong>${state.outboxFailed.length >= 3 ? "critical" : state.outboxFailed.length ? "watch" : "healthy"}</strong></div>
+    `;
+  }
+
+  if (webhookSummary) {
+    webhookSummary.innerHTML = `
+      <div class="list-row"><span>Failed deliveries</span><strong>${state.deliveryFailed.length}</strong></div>
+      <div class="list-row"><span>Configured endpoints</span><strong>${state.webhookEndpoints.length}</strong></div>
+      <div class="list-row"><span>Transport stance</span><strong>${state.deliveryFailed.length >= 3 ? "critical" : state.deliveryFailed.length ? "degraded" : "healthy"}</strong></div>
+    `;
+  }
+
+  if (auditStream) {
+    if (!state.audit.length) {
+      auditStream.innerHTML = `<div class="event-card"><span class="muted">No audit entries.</span></div>`;
+      return;
+    }
+    auditStream.innerHTML = state.audit.slice(0, 12).map((item) => `
+      <article class="event-card">
+        <header>
+          <div>
+            <strong>${item.entity_type}</strong>
+            <div class="muted small">${item.action} • entity ${item.entity_id}</div>
+          </div>
+          <span class="muted small">${new Date(item.created_at).toLocaleString()}</span>
+        </header>
+      </article>
+    `).join("");
+  }
+}
+
+function renderLeadModule() {
+  const inboxTarget = document.getElementById("lead-inbox-summary");
+  const blueprintTarget = document.getElementById("lead-blueprint");
+  if (!inboxTarget || !blueprintTarget) return;
+
+  const unlinkedPeople = state.people.filter((item) => !item.organization_id);
+  const orgsWithoutDeals = state.organizations.filter((org) => !state.deals.some((deal) => deal.organization_id === org.id));
+  const recentNotes = state.notes.slice(0, 5);
+
+  inboxTarget.innerHTML = `
+    <div class="list-row"><span>Potential lead contacts</span><strong>${unlinkedPeople.length}</strong></div>
+    <div class="list-row"><span>Accounts without opportunity</span><strong>${orgsWithoutDeals.length}</strong></div>
+    <div class="list-row"><span>Recent notes to classify</span><strong>${recentNotes.length}</strong></div>
+    <div class="detail-card"><span class="muted">Until a dedicated lead object exists, this page highlights where inbound or early-stage qualification pressure is building inside current CRM data.</span></div>
+  `;
+
+  blueprintTarget.innerHTML = `
+    <div class="list-row"><span>Status</span><strong>navigation live, model pending</strong></div>
+    <div class="list-row"><span>Expected output</span><strong>promote qualified leads into accounts and opportunities</strong></div>
+    <div class="list-row"><span>Priority signals</span><strong>source, fit, urgency, owner</strong></div>
+    <div class="list-row"><span>Best next implementation</span><strong>create leads + conversion flow</strong></div>
+  `;
+}
+
+function renderReportsOverview() {
+  const summaryTarget = document.getElementById("reports-overview-summary");
+  const usageTarget = document.getElementById("reports-overview-usage");
+  if (!summaryTarget || !usageTarget) return;
+
+  const openDeals = state.deals.filter((item) => !["won", "lost", "closed"].includes(String(item.status || "").toLowerCase()));
+  const wonDeals = state.deals.filter((item) => String(item.status || "").toLowerCase() === "won");
+  const openTasks = state.tasks.filter((item) => !["done", "completed", "closed"].includes(String(item.status || "").toLowerCase()));
+
+  summaryTarget.innerHTML = `
+    <div class="list-row"><span>Dashboards</span><strong>pipeline, conversion, workload</strong></div>
+    <div class="list-row"><span>Forecasts</span><strong>weighted and best-case posture</strong></div>
+    <div class="list-row"><span>Open pipeline</span><strong>${openDeals.length} deals</strong></div>
+    <div class="list-row"><span>Closed won</span><strong>${wonDeals.length}</strong></div>
+  `;
+
+  usageTarget.innerHTML = `
+    <div class="list-row"><span>Leadership cadence</span><strong>use dashboards for weekly operating review</strong></div>
+    <div class="list-row"><span>Revenue posture</span><strong>use forecasts for closing confidence</strong></div>
+    <div class="list-row"><span>Execution pressure</span><strong>${openTasks.length} open tasks inform delivery risk</strong></div>
+    <div class="list-row"><span>Next step</span><strong>saved reports and exportable views</strong></div>
+  `;
+}
+
+function renderImportsModule() {
+  const summaryTarget = document.getElementById("imports-summary");
+  const flowTarget = document.getElementById("imports-flow");
+  if (!summaryTarget || !flowTarget) return;
+
+  const totalEntities = state.organizations.length + state.people.length + state.deals.length + state.tasks.length;
+  const accountsWithoutDomain = state.organizations.filter((item) => !item.domain).length;
+  const contactsWithoutEmail = state.people.filter((item) => !item.email).length;
+
+  summaryTarget.innerHTML = `
+    <div class="list-row"><span>Current CRM records</span><strong>${totalEntities}</strong></div>
+    <div class="list-row"><span>Accounts missing domain</span><strong>${accountsWithoutDomain}</strong></div>
+    <div class="list-row"><span>Contacts missing email</span><strong>${contactsWithoutEmail}</strong></div>
+    <div class="detail-card"><span class="muted">This import page is now useful as a readiness checkpoint: it shows where current data quality will matter once CSV and provider import jobs are connected.</span></div>
+  `;
+
+  flowTarget.innerHTML = `
+    <div class="list-row"><span>1. Upload</span><strong>CSV or provider extract</strong></div>
+    <div class="list-row"><span>2. Preview</span><strong>mapping and validation</strong></div>
+    <div class="list-row"><span>3. Execute</span><strong>tracked import jobs</strong></div>
+    <div class="list-row"><span>4. Review</span><strong>errors, duplicates, ownership fixes</strong></div>
   `;
 }
 
@@ -1438,6 +1717,11 @@ async function loadDashboard() {
   renderRankedList("endpoint-traffic-list", deliveryStats.by_endpoint || [], "endpoint_name");
   renderSalesSnapshot();
   renderCommercialReporting();
+  renderSystemActivityStream();
+  renderPlatformConsole();
+  renderLeadModule();
+  renderReportsOverview();
+  renderImportsModule();
   renderWorkspaceFocus();
   renderBridgeRail();
   renderTeamHub();
@@ -1455,6 +1739,9 @@ async function loadDashboard() {
   renderAudit();
   renderAdminCenter();
   setWorkerStatus((outboxStats.by_status || []).length > 0);
+  syncHomeLayoutControls();
+  applyHomeLayout();
+  applyCurrentPage();
 }
 
 function showApp() {
@@ -1465,6 +1752,9 @@ function showApp() {
   applyWorkspaceMode();
   applyFiltersToControls();
   renderSavedViews();
+  syncHomeLayoutControls();
+  applyHomeLayout();
+  applyCurrentPage();
 }
 
 function showLogin() {
@@ -1857,18 +2147,22 @@ commandSearch.addEventListener("input", () => {
   `);
 });
 
-function markActiveNav() {
-  const sections = [...document.querySelectorAll(".content-section[id]")];
-  const navItems = [...document.querySelectorAll(".nav-item")];
-  const current = sections.find((section) => {
-    const rect = section.getBoundingClientRect();
-    return rect.top <= 180 && rect.bottom >= 180;
+if (homeLayoutForm) {
+  homeLayoutForm.addEventListener("change", () => {
+    state.homeWidgets = {
+      summary: Boolean(homeLayoutForm.elements.namedItem("summary")?.checked),
+      platform: Boolean(homeLayoutForm.elements.namedItem("platform")?.checked),
+      control: Boolean(homeLayoutForm.elements.namedItem("control")?.checked),
+      activity: Boolean(homeLayoutForm.elements.namedItem("activity")?.checked),
+      snapshot: Boolean(homeLayoutForm.elements.namedItem("snapshot")?.checked),
+      posture: Boolean(homeLayoutForm.elements.namedItem("posture")?.checked),
+    };
+    persistHomeWidgets();
+    applyHomeLayout();
   });
-  if (!current) return;
-  navItems.forEach((item) => item.classList.toggle("active", item.getAttribute("href") === `#${current.id}`));
 }
 
-window.addEventListener("scroll", markActiveNav, { passive: true });
+window.addEventListener("hashchange", applyCurrentPage);
 
 async function boot() {
   if (!state.token || !state.session) {
@@ -1877,9 +2171,11 @@ async function boot() {
   }
 
   try {
+    if (!window.location.hash) {
+      window.location.hash = "#home";
+    }
     showApp();
     await loadDashboard();
-    markActiveNav();
   } catch (_error) {
     clearSession();
     showLogin();

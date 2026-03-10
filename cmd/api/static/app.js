@@ -234,6 +234,71 @@ function renderSalesSnapshot() {
   `;
 }
 
+function renderCommercialReporting() {
+  const stageTarget = document.getElementById("report-stage-funnel");
+  const conversionTarget = document.getElementById("report-conversion");
+  const forecastTarget = document.getElementById("report-forecast");
+  const taskLoadTarget = document.getElementById("report-task-load");
+
+  const stageOrder = ["lead", "proposal", "negotiation", "won"];
+  const stageWeights = {
+    lead: 0.1,
+    proposal: 0.4,
+    negotiation: 0.7,
+    won: 1,
+  };
+
+  const stageRows = stageOrder.map((stage) => {
+    const deals = state.deals.filter((item) => (item.stage || "lead") === stage);
+    const value = deals.reduce((sum, item) => sum + Number(item.value_amount || 0), 0);
+    return { stage, count: deals.length, value };
+  });
+
+  stageTarget.innerHTML = stageRows.map((item) => `
+    <div class="list-row">
+      <span>${item.stage}</span>
+      <strong>${item.count} deals / USD ${item.value.toLocaleString()}</strong>
+    </div>
+  `).join("");
+
+  const wonDeals = state.deals.filter((item) => String(item.status || "").toLowerCase() === "won");
+  const lostDeals = state.deals.filter((item) => String(item.status || "").toLowerCase() === "lost");
+  const openDeals = state.deals.filter((item) => !["won", "lost", "closed"].includes(String(item.status || "").toLowerCase()));
+  const closedCount = wonDeals.length + lostDeals.length;
+  const winRate = closedCount ? Math.round((wonDeals.length / closedCount) * 100) : 0;
+
+  conversionTarget.innerHTML = `
+    <div class="list-row"><span>Won deals</span><strong>${wonDeals.length}</strong></div>
+    <div class="list-row"><span>Lost deals</span><strong>${lostDeals.length}</strong></div>
+    <div class="list-row"><span>Open deals</span><strong>${openDeals.length}</strong></div>
+    <div class="list-row"><span>Win rate</span><strong>${winRate}%</strong></div>
+  `;
+
+  const weightedForecast = openDeals.reduce((sum, item) => {
+    const weight = stageWeights[String(item.stage || "lead").toLowerCase()] ?? 0.1;
+    return sum + Number(item.value_amount || 0) * weight;
+  }, 0);
+  const bestCase = openDeals.reduce((sum, item) => sum + Number(item.value_amount || 0), 0);
+
+  forecastTarget.innerHTML = `
+    <div class="list-row"><span>Weighted forecast</span><strong>USD ${Math.round(weightedForecast).toLocaleString()}</strong></div>
+    <div class="list-row"><span>Best case pipeline</span><strong>USD ${bestCase.toLocaleString()}</strong></div>
+    <div class="list-row"><span>Late-stage open</span><strong>${openDeals.filter((item) => ["proposal", "negotiation"].includes(String(item.stage || "").toLowerCase())).length}</strong></div>
+  `;
+
+  const openTasks = state.tasks.filter((item) => !["done", "completed", "closed"].includes(String(item.status || "").toLowerCase()));
+  const highTasks = openTasks.filter((item) => String(item.priority || "").toLowerCase() === "high");
+  const overdue = overdueTasks();
+  const today = dueTodayTasks();
+
+  taskLoadTarget.innerHTML = `
+    <div class="list-row"><span>Open tasks</span><strong>${openTasks.length}</strong></div>
+    <div class="list-row"><span>High priority</span><strong>${highTasks.length}</strong></div>
+    <div class="list-row"><span>Due today</span><strong>${today.length}</strong></div>
+    <div class="list-row"><span>Overdue</span><strong>${overdue.length}</strong></div>
+  `;
+}
+
 function userOwnsItem(item) {
   const userID = Number(state.session?.user_id || 0);
   if (!userID) return false;
@@ -1235,6 +1300,7 @@ async function loadDashboard() {
   renderRankedList("event-type-list", outboxStats.by_event_type || [], "event_type");
   renderRankedList("endpoint-traffic-list", deliveryStats.by_endpoint || [], "endpoint_name");
   renderSalesSnapshot();
+  renderCommercialReporting();
   renderWorkspaceFocus();
   renderTeamHub();
   renderPipeline(state.deals);
